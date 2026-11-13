@@ -723,7 +723,7 @@
             scope: SCOPES,
             callback: async (tokenResponse) => {
               if (tokenResponse.error !== undefined) {
-                console.log('自動靜默登入需重新確認授權：', tokenResponse.error);
+                console.log('靜默登入需互動確認：', tokenResponse.error);
                 const authBtn = document.getElementById('auth-btn');
                 if (authBtn) authBtn.classList.add('animate-pulse', 'ring-2', 'ring-emerald-300');
                 return;
@@ -739,15 +739,23 @@
             },
           });
 
+          // 1. 網頁載入先嘗試無畫面靜默連線
           setTimeout(() => {
             if (!accessToken) {
-              try {
-                tokenClient.requestAccessToken({ prompt: '' });
-              } catch (e) {
-                console.log('自動連線略過', e);
-              }
+              try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) {}
             }
-          }, 500);
+          }, 400);
+
+          // 2. 手機端防彈窗對策：若靜默失敗，只要手指點一下螢幕任何位置即自動觸發連線
+          const autoTriggerOnTap = () => {
+            if (!accessToken && localStorage.getItem('pm_has_authed') === 'true') {
+              try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) {}
+            }
+            document.removeEventListener('click', autoTriggerOnTap);
+            document.removeEventListener('touchstart', autoTriggerOnTap);
+          };
+          document.addEventListener('click', autoTriggerOnTap, { once: true });
+          document.addEventListener('touchstart', autoTriggerOnTap, { once: true });
         }
       }, 300);
     }
@@ -778,6 +786,14 @@
           });
           const cloudData = await fileRes.json();
           appData = { ...appData, ...cloudData };
+          if (appData.meta.geminiKey) localStorage.setItem('pm_gemini_key', appData.meta.geminiKey);
+       if (appData.meta.clientId) localStorage.setItem('pm_google_client_id', appData.meta.clientId);
+          if (appData.meta.geminiKey) {
+            localStorage.setItem('pm_gemini_key', appData.meta.geminiKey);
+          }
+          if (appData.meta.clientId) {
+            localStorage.setItem('pm_google_client_id', appData.meta.clientId);
+          }
           localStorage.setItem('pm_local_data', JSON.stringify(appData));
           updateSyncUI('synced', '已從雲端載入最新資料');
           document.getElementById('dash-drive-file').innerText = `${DATA_FILENAME} (已同步)`;
@@ -1450,10 +1466,14 @@ function moveModuleCard(cardId, direction) {
       const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
       if (clientId) {
         localStorage.setItem('pm_google_client_id', clientId);
+        appData.meta.clientId = clientId;
         document.getElementById('setup-banner').classList.add('hidden');
         initGoogleIdentity(clientId);
       }
-      if (geminiKey) localStorage.setItem('pm_gemini_key', geminiKey);
+      if (geminiKey) {
+        localStorage.setItem('pm_gemini_key', geminiKey);
+        appData.meta.geminiKey = geminiKey;
+      }
       appData.meta.communityName = document.getElementById('cfg-comm-name').value.trim();
       appData.meta.phone = document.getElementById('cfg-phone').value.trim();
       appData.meta.taxId = document.getElementById('cfg-taxid').value.trim();
