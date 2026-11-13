@@ -714,7 +714,7 @@
     }
 
     // ================= 3. Google Drive API 私有連線 =================
-    function initGoogleIdentity(clientId) {
+ function initGoogleIdentity(clientId) {
       const checkInterval = setInterval(() => {
         if (window.google && window.google.accounts) {
           clearInterval(checkInterval);
@@ -723,7 +723,7 @@
             scope: SCOPES,
             callback: async (tokenResponse) => {
               if (tokenResponse.error !== undefined) {
-                alert('Google 登入失敗：' + tokenResponse.error);
+                console.log('自動靜默登入未完成，等待手動點擊：', tokenResponse.error);
                 return;
               }
               accessToken = tokenResponse.access_token;
@@ -733,6 +733,12 @@
               await findOrCreateDriveFile();
             },
           });
+          // 網頁開啟時自動嘗試靜默連結雲端
+          setTimeout(() => {
+            if (!accessToken) {
+              tokenClient.requestAccessToken({ prompt: '' });
+            }
+          }, 600);
         }
       }, 300);
     }
@@ -1229,7 +1235,7 @@
       }
 
       const activeRepairs = appData.repairs.filter(r => r.status !== '已驗收結案').length;
-      const cards = [
+      const defaultCards = [
         { id: 'events', title: '大事紀要紀錄', count: appData.events.length, unit: '筆', desc: '四色分類與重點工作排程', icon: 'calendar-days', color: 'text-blue-600 bg-blue-50' },
         { id: 'regulations', title: '社區規範', count: appData.regulations.length, unit: '份', desc: '雲端 PDF/圖檔歸檔與線上閱讀', icon: 'book-open', color: 'text-teal-600 bg-teal-50' },
         { id: 'announcements', title: '公告製作', count: appData.announcements.length, unit: '則', desc: 'A4 公文公告套印與 PDF', icon: 'file-text', color: 'text-indigo-600 bg-indigo-50' },
@@ -1242,11 +1248,25 @@
         { id: 'operations', title: '裝潢/廠商/申報', count: appData.renovations.length + appData.vendors.length, unit: '項', desc: '施工保證金、廠商與法定申報', icon: 'shield-check', color: 'text-orange-600 bg-orange-50' }
       ];
 
-      document.getElementById('module-cards-grid').innerHTML = cards.map(c => `
-        <div onclick="switchTab('${c.id}')" class="paper-card p-4 cursor-pointer flex flex-col justify-between">
+      let savedOrder = appData.meta.cardOrder || JSON.parse(localStorage.getItem('pm_card_order') || '[]');
+      const cards = [...defaultCards].sort((a, b) => {
+        const idxA = savedOrder.indexOf(a.id);
+        const idxB = savedOrder.indexOf(b.id);
+        if (idxA === -1 && idxB === -1) return 0;
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+
+      document.getElementById('module-cards-grid').innerHTML = cards.map((c, index) => `
+        <div onclick="switchTab('${c.id}')" class="paper-card p-4 cursor-pointer flex flex-col justify-between relative">
           <div class="flex items-center justify-between mb-3">
             <div class="w-9 h-9 rounded-lg ${c.color} flex items-center justify-center"><i data-lucide="${c.icon}" class="w-5 h-5"></i></div>
-            <span class="text-xs font-medium px-2 py-1 rounded bg-slate-100 text-slate-700">${c.title}</span>
+            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+              <button onclick="moveModuleCard('${c.id}', -1)" ${index === 0 ? 'disabled' : ''} title="往上移動" class="w-6 h-6 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold">↑</button>
+              <button onclick="moveModuleCard('${c.id}', 1)" ${index === cards.length - 1 ? 'disabled' : ''} title="往下移動" class="w-6 h-6 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold">↓</button>
+              <span class="text-xs font-medium px-2 py-1 rounded bg-slate-100 text-slate-700 ml-0.5">${c.title}</span>
+            </div>
           </div>
           <div>
             <div class="flex items-baseline gap-1"><span class="text-2xl font-bold text-slate-800">${c.count}</span><span class="text-xs text-slate-500">${c.unit}</span></div>
