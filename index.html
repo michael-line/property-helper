@@ -1372,7 +1372,7 @@
           })
         });
         const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || ('系統目前忙碌中，請稍後再試一次);
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || ('系統目前忙碌中，請稍後再試一次');
         chatBox.innerHTML += `<div class="text-left"><div class="inline-block bg-white border border-slate-200 text-slate-800 px-3 py-2 rounded-xl text-xs whitespace-pre-line">${reply}</div></div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
       } catch (err) {
