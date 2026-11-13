@@ -961,7 +961,7 @@
       }
     }
 
-    function compressImageToBase64(file, maxWidth = 550, quality = 0.55) {
+    function compressImageToBase64(file, maxWidth = 650, quality = 0.65) {
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -980,7 +980,7 @@
       });
     }
 
-    // ================= 4. 首頁主區塊：工作日誌與排程（累加圖片 + 編輯 + 匯出呈報圖片） =================
+    // ================= 4. 首頁主區塊：工作日誌與排程（保持相片原始比例 + 累加圖片 + 編輯） =================
     function openNewQuickLogForm() {
       editingWorkLogId = null;
       document.getElementById('ql-form-title').innerText = '➕ 新增工作日誌／排程';
@@ -1019,7 +1019,6 @@
       document.getElementById('quick-log-form').classList.add('hidden');
     }
 
-    // 累加式上傳圖片（最多 4 張，不會蓋掉前面選的圖片）
     async function handleQuickLogPhotos(event) {
       const files = Array.from(event.target.files || []);
       if (files.length === 0) return;
@@ -1033,7 +1032,7 @@
 
       const toProcess = files.slice(0, remaining);
       for (const f of toProcess) {
-        const b64 = await compressImageToBase64(f, 550, 0.55);
+        const b64 = await compressImageToBase64(f, 650, 0.65);
         tempQuickPhotos.push(b64);
       }
       if (files.length > remaining) {
@@ -1048,6 +1047,7 @@
       renderQuickPhotoPreview();
     }
 
+    // 縮圖預覽：採用 w-full h-auto 保持相片完整原比例，不裁切不拉伸
     function renderQuickPhotoPreview() {
       const hint = document.getElementById('ql-photo-count-hint');
       if (hint) hint.innerText = `已選 ${tempQuickPhotos.length} / 4 張圖片`;
@@ -1056,9 +1056,9 @@
       if (tempQuickPhotos.length > 0) {
         prev.classList.remove('hidden');
         prev.innerHTML = tempQuickPhotos.map((src, idx) => `
-          <div class="relative">
-            <img src="${src}" class="w-full h-16 object-cover rounded-lg border border-slate-300">
-            <button type="button" onclick="removeTempQuickPhoto(${idx})" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-600 text-white text-xs flex items-center justify-center shadow">✕</button>
+          <div class="relative bg-white p-1 rounded-lg border border-slate-300 flex items-center justify-center">
+            <img src="${src}" class="w-full h-auto max-h-32 object-contain rounded">
+            <button type="button" onclick="removeTempQuickPhoto(${idx})" class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose-600 text-white text-xs flex items-center justify-center shadow">✕</button>
           </div>
         `).join('');
       } else {
@@ -1158,7 +1158,7 @@
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
 
-      // 上方已有日期，明細內不再重複顯示日期，並附上「編輯」與「刪除」按鍵（匯出圖片時自動隱藏按鍵）
+      // 圖片採用 w-full h-auto block 維持與相片 100% 同比例，匯出呈報圖片不變形
       container.innerHTML = list.map(item => `
         <div class="py-2.5 space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -1179,8 +1179,8 @@
             </div>
           </div>
           ${Array.isArray(item.photos) && item.photos.length > 0 ? `
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              ${item.photos.map(src => `<img src="${src}" class="w-full h-28 object-cover rounded-lg border border-slate-200">`).join('')}
+            <div class="grid grid-cols-2 gap-2 pt-1 items-start">
+              ${item.photos.map(src => `<img src="${src}" class="w-full h-auto rounded-lg border border-slate-200 block">`).join('')}
             </div>
           ` : ''}
         </div>
@@ -1211,7 +1211,6 @@
       captureAndDownloadImage('daily-report-capture-area', `工作日誌與排程呈報_${dateTag}.png`);
     }
 
-    // 日誌列印模組（依日期讀取首頁紀錄、支援刪除與再次輸出）
     function renderDailyLogPrintView() {
       const filterDate = document.getElementById('dl-print-date')?.value || '';
       const comm = appData.meta.communityName || '小A 物業管理';
@@ -1234,8 +1233,8 @@
             <button type="button" onclick="deleteWorkLogAndSync(${item.id}); renderDailyLogPrintView();" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded border border-rose-200 shrink-0 no-print no-export">刪除</button>
           </div>
           ${Array.isArray(item.photos) && item.photos.length > 0 ? `
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              ${item.photos.map(src => `<img src="${src}" class="w-full h-32 object-cover rounded-lg border border-slate-300">`).join('')}
+            <div class="grid grid-cols-2 gap-2 pt-1 items-start">
+              ${item.photos.map(src => `<img src="${src}" class="w-full h-auto rounded-lg border border-slate-300 block">`).join('')}
             </div>
           ` : ''}
         </div>
@@ -1246,7 +1245,7 @@
       const dateTag = document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       captureAndDownloadImage('dailylog-print-area', `日誌列印輸出_${dateTag}.png`);
     }
-    // ================= 5. 大事紀要（自訂日期區間匯出 + 是否含圖片選項） =================
+    // ================= 5. 大事紀要（圖片維持原始比例不變形） =================
     function setEventColorFilter(color) {
       currentColorFilter = color;
       ['all', 'red', 'blue', 'green', 'purple'].forEach(c => {
@@ -1284,6 +1283,7 @@
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⭐' };
       const colorMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
 
+      // 圖片採用 w-full h-auto block 並加上 items-start，確保匯出圖片時 100% 維持相片原比例不壓扁
       document.getElementById('events-list').innerHTML = filtered.map(e => `
         <div class="py-3 space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -1296,8 +1296,8 @@
             <button onclick="deleteItem('events', ${e.id})" class="text-slate-400 hover:text-rose-600 shrink-0 no-export"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
           ${withPhotos && Array.isArray(e.photos) && e.photos.length > 0 ? `
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              ${e.photos.map(src => `<img src="${src}" class="w-full h-28 object-cover rounded-lg border border-slate-200">`).join('')}
+            <div class="grid grid-cols-2 gap-2 pt-1 items-start">
+              ${e.photos.map(src => `<img src="${src}" class="w-full h-auto rounded-lg border border-slate-200 block">`).join('')}
             </div>
           ` : ''}
         </div>
@@ -1311,7 +1311,7 @@
       captureAndDownloadImage('events-capture-area', `大事紀要彙整_${s}_${e}.png`);
     }
 
-    // ================= 6. 公告園地（上傳圖檔 + AI 自動解析記錄） =================
+    // ================= 6. 公告園地（Gemini 視覺模型提取圖片文字並解析記錄） =================
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -1324,32 +1324,47 @@
 
       const btn = document.getElementById('ann-upload-btn');
       btn.disabled = true;
-      btn.innerHTML = '⏳ AI 正在解析公告圖檔...';
+      btn.innerHTML = '⏳ AI 正在辨識圖片文字...';
 
       try {
-        const photoB64 = await compressImageToBase64(file, 850, 0.72);
+        // 提高公告圖片解析度至 1200px，確保小字清晰可辨識
+        const photoB64 = await compressImageToBase64(file, 1200, 0.82);
         let aiSummary = '（未設定 Gemini API Key，僅保存圖檔與標題）';
 
         const apiKey = localStorage.getItem('pm_gemini_key');
         if (apiKey) {
+          const mimeMatch = photoB64.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,/);
+          const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
           const base64Data = photoB64.split(',')[1];
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
+
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
+                role: 'user',
                 parts: [
-                  { text: '請判讀這張社區公告圖片的完整文字與重點資訊（包含：發文單位、時間/日期、地點、影響範圍、注意事項），用精簡清晰的繁體中文條列整理出來，方便物業人員日後搜尋查閱。' },
-                  { inline_data: { mime_type: 'image/jpeg', data: base64Data } }
+                  {
+                    text: '你是一位專業社區物業總幹事。請仔細辨識這張公告圖片中的所有文字內容，並分成兩部分用繁體中文輸出：\n【重點摘要】條列發文單位、日期/時間、施工或活動地點、影響範圍與注意事項。\n【全文提取】完整轉錄圖片上的公告文字內容，方便日後關鍵字搜尋。'
+                  },
+                  {
+                    inlineData: {
+                      mimeType: mimeType,
+                      data: base64Data
+                    }
+                  }
                 ]
               }]
             })
           });
+
           const data = await res.json();
-          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            aiSummary = data.candidates[0].content?.parts?.[0]?.text.trim();
+          if (data.error) {
+            aiSummary = `AI 解析失敗：${data.error.message || '請確認 Gemini API Key 是否正確'}`;
+          } else if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            aiSummary = data.candidates[0].content.parts[0].text.trim();
           } else {
-            aiSummary = 'AI 解析暫時無回應，已為您保存公告圖檔。';
+            aiSummary = 'AI 無法辨識此圖片文字，已為您保存原始公告圖檔。';
           }
         }
 
@@ -1364,7 +1379,7 @@
         document.getElementById('ann-title').value = '';
         document.getElementById('ann-image-file').value = '';
         await syncToCloud();
-        alert('公告圖檔已上傳，並完成 AI 解析記錄！');
+        alert('公告圖檔已上傳，並完成 AI 文字提取與解析記錄！');
       } catch (err) {
         console.error(err);
         alert('上傳或解析發生錯誤，請檢查網路連線。');
@@ -1398,9 +1413,9 @@
               </div>
               <button onclick="deleteItem('announcements', ${a.id})" class="text-slate-400 hover:text-rose-600 shrink-0" title="刪除"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            ${a.photo ? `<img src="${a.photo}" onclick="window.open('${a.photo}')" class="w-full h-48 object-contain bg-slate-50 rounded-lg border border-slate-200 cursor-zoom-in mb-2.5" title="點擊檢視原圖">` : ''}
+            ${a.photo ? `<img src="${a.photo}" onclick="window.open('${a.photo}')" class="w-full h-auto max-h-64 object-contain bg-slate-50 rounded-lg border border-slate-200 cursor-zoom-in mb-2.5" title="點擊檢視原圖">` : ''}
             <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 whitespace-pre-line leading-relaxed">
-              <span class="font-bold text-indigo-700 block mb-1">🤖 AI 解析摘要：</span>
+              <span class="font-bold text-indigo-700 block mb-1">🤖 AI 提取與解析內容：</span>
               ${a.aiSummary || a.body || '無摘要內容'}
             </div>
           </div>
@@ -1681,7 +1696,6 @@
 
       const activeRepairs = appData.repairs.filter(r => r.status !== '已驗收結案').length;
 
-      // 各子頁面明細標題顯示總筆數
       if (document.getElementById('events-total-badge')) document.getElementById('events-total-badge').innerText = `共 ${appData.events.length} 筆`;
       if (document.getElementById('regulations-total-badge')) document.getElementById('regulations-total-badge').innerText = `共 ${appData.regulations.length} 份`;
       if (document.getElementById('announcements-total-badge')) document.getElementById('announcements-total-badge').innerText = `共 ${appData.announcements.length} 則`;
@@ -1691,7 +1705,6 @@
       if (document.getElementById('repairs-total-badge')) document.getElementById('repairs-total-badge').innerText = `處理中 ${activeRepairs} 件 / 累計 ${appData.repairs.length} 單`;
       if (document.getElementById('operations-total-badge')) document.getElementById('operations-total-badge').innerText = `共 ${appData.renovations.length + appData.vendors.length} 項`;
 
-      // 「公告製作」改為「公告園地」，「大事紀要」改為星星圖標
       const defaultCards = [
         { id: 'dailylog', title: '日誌列印', icon: 'printer', tileBg: 'bg-cyan-50 border-cyan-200 hover:bg-cyan-100/70', iconBg: 'bg-cyan-600 text-white' },
         { id: 'repairs', title: '報修管制', icon: 'wrench', tileBg: 'bg-amber-50 border-amber-200 hover:bg-amber-100/70', iconBg: 'bg-amber-500 text-white' },
@@ -1816,9 +1829,9 @@
       const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r=>r.status!=='已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `你是一位專業的台灣社區物業總幹事。目前社區數據摘要：${contextSummary}。請用專業、精簡的繁體中文回答以下問題：\n${prompt}` }] }]
           })
