@@ -650,7 +650,17 @@
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    
+    // 自動從網址列參數讀取金鑰並儲存（解決手機重整或換機需重打金鑰的問題）
+    (function autoLoadKeysFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const urlClientId = params.get('cid');
+      const urlGeminiKey = params.get('gkey');
+      if (urlClientId) localStorage.setItem('pm_google_client_id', urlClientId);
+      if (urlGeminiKey) localStorage.setItem('pm_gemini_key', urlGeminiKey);
+      if (urlClientId || urlGeminiKey) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    })();
     let tokenClient;
     let accessToken = null;
     let driveFileId = null;
