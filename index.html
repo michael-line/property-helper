@@ -1245,7 +1245,7 @@
       const dateTag = document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       captureAndDownloadImage('dailylog-print-area', `日誌列印輸出_${dateTag}.png`);
     }
-    // ================= 5. 大事紀要（圖片維持原始比例不變形） =================
+    // ================= 5. 大事紀要（匯出保持相片原比例不變形） =================
     function setEventColorFilter(color) {
       currentColorFilter = color;
       ['all', 'red', 'blue', 'green', 'purple'].forEach(c => {
@@ -1283,7 +1283,7 @@
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⭐' };
       const colorMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
 
-      // 圖片採用 w-full h-auto block 並加上 items-start，確保匯出圖片時 100% 維持相片原比例不壓扁
+      // 圖片採用 w-full h-auto block 保持原始比例，避免匯出呈報圖片時被壓扁或拉伸
       document.getElementById('events-list').innerHTML = filtered.map(e => `
         <div class="py-3 space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -1311,7 +1311,7 @@
       captureAndDownloadImage('events-capture-area', `大事紀要彙整_${s}_${e}.png`);
     }
 
-    // ================= 6. 公告園地（Gemini 視覺模型提取圖片文字並解析記錄） =================
+    // ================= 6. 公告園地（高解析度傳圖 + Gemini 視覺 OCR 文字提取解析） =================
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -1324,32 +1324,28 @@
 
       const btn = document.getElementById('ann-upload-btn');
       btn.disabled = true;
-      btn.innerHTML = '⏳ AI 正在辨識圖片文字...';
+      btn.innerHTML = '⏳ AI 正在辨識提取公告文字...';
 
       try {
-        // 提高公告圖片解析度至 1200px，確保小字清晰可辨識
+        // 使用較高解析度 (1200px) 確保公告小字清晰可辨識
         const photoB64 = await compressImageToBase64(file, 1200, 0.82);
-        let aiSummary = '（未設定 Gemini API Key，僅保存圖檔與標題）';
+        let aiSummary = '（尚未設定 Gemini API Key，僅保存圖檔與標題）';
 
         const apiKey = localStorage.getItem('pm_gemini_key');
         if (apiKey) {
-          const mimeMatch = photoB64.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,/);
-          const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
           const base64Data = photoB64.split(',')[1];
-
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{
-                role: 'user',
                 parts: [
                   {
-                    text: '你是一位專業社區物業總幹事。請仔細辨識這張公告圖片中的所有文字內容，並分成兩部分用繁體中文輸出：\n【重點摘要】條列發文單位、日期/時間、施工或活動地點、影響範圍與注意事項。\n【全文提取】完整轉錄圖片上的公告文字內容，方便日後關鍵字搜尋。'
+                    text: '你是一位專業的社區物業總幹事助手。請仔細辨識並提取這張社區公告圖片中的所有文字內容，並整理成以下格式（繁體中文）：\n【重點摘要】（時間/日期、地點、影響範圍或費用等關鍵資訊）\n【公告完整文字提取】（逐條列出圖片中的主旨、說明與注意事項）'
                   },
                   {
                     inlineData: {
-                      mimeType: mimeType,
+                      mimeType: 'image/jpeg',
                       data: base64Data
                     }
                   }
@@ -1357,14 +1353,13 @@
               }]
             })
           });
-
           const data = await res.json();
-          if (data.error) {
-            aiSummary = `AI 解析失敗：${data.error.message || '請確認 Gemini API Key 是否正確'}`;
-          } else if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
             aiSummary = data.candidates[0].content.parts[0].text.trim();
+          } else if (data.error) {
+            aiSummary = `AI 解析失敗：${data.error.message || '請檢查 Gemini API Key 是否正確'}`;
           } else {
-            aiSummary = 'AI 無法辨識此圖片文字，已為您保存原始公告圖檔。';
+            aiSummary = 'AI 無法辨識圖片文字，請確認圖片清晰度後重試。';
           }
         }
 
@@ -1379,10 +1374,10 @@
         document.getElementById('ann-title').value = '';
         document.getElementById('ann-image-file').value = '';
         await syncToCloud();
-        alert('公告圖檔已上傳，並完成 AI 文字提取與解析記錄！');
+        alert('公告圖檔已上傳，並完成 AI 文字提取解析！');
       } catch (err) {
         console.error(err);
-        alert('上傳或解析發生錯誤，請檢查網路連線。');
+        alert('上傳或解析發生錯誤，請檢查網路連線或 API Key 設定。');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> 上傳圖檔並請 AI 分析記錄';
@@ -1413,9 +1408,9 @@
               </div>
               <button onclick="deleteItem('announcements', ${a.id})" class="text-slate-400 hover:text-rose-600 shrink-0" title="刪除"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            ${a.photo ? `<img src="${a.photo}" onclick="window.open('${a.photo}')" class="w-full h-auto max-h-64 object-contain bg-slate-50 rounded-lg border border-slate-200 cursor-zoom-in mb-2.5" title="點擊檢視原圖">` : ''}
+            ${a.photo ? `<img src="${a.photo}" onclick="window.open('${a.photo}')" class="w-full h-auto max-h-64 object-contain bg-slate-50 rounded-lg border border-slate-200 cursor-zoom-in mb-2.5 block" title="點擊檢視原圖">` : ''}
             <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 whitespace-pre-line leading-relaxed">
-              <span class="font-bold text-indigo-700 block mb-1">🤖 AI 提取與解析內容：</span>
+              <span class="font-bold text-indigo-700 block mb-1">🤖 AI 圖片文字解析：</span>
               ${a.aiSummary || a.body || '無摘要內容'}
             </div>
           </div>
