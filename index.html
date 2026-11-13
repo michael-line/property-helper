@@ -723,22 +723,31 @@
             scope: SCOPES,
             callback: async (tokenResponse) => {
               if (tokenResponse.error !== undefined) {
-                console.log('自動靜默登入未完成，等待手動點擊：', tokenResponse.error);
+                console.log('自動靜默登入需重新確認授權：', tokenResponse.error);
+                const authBtn = document.getElementById('auth-btn');
+                if (authBtn) authBtn.classList.add('animate-pulse', 'ring-2', 'ring-emerald-300');
                 return;
               }
+              localStorage.setItem('pm_has_authed', 'true');
               accessToken = tokenResponse.access_token;
               updateSyncUI('syncing', '正在連線雲端硬碟...');
+              const authBtn = document.getElementById('auth-btn');
+              authBtn.classList.remove('animate-pulse', 'ring-2', 'ring-emerald-300');
               document.getElementById('auth-btn-text').innerText = '已連結雲端';
-              document.getElementById('auth-btn').classList.replace('bg-emerald-600', 'bg-slate-800');
+              authBtn.classList.replace('bg-emerald-600', 'bg-slate-800');
               await findOrCreateDriveFile();
             },
           });
-          // 網頁開啟時自動嘗試靜默連結雲端
+
           setTimeout(() => {
             if (!accessToken) {
-              tokenClient.requestAccessToken({ prompt: '' });
+              try {
+                tokenClient.requestAccessToken({ prompt: '' });
+              } catch (e) {
+                console.log('自動連線略過', e);
+              }
             }
-          }, 600);
+          }, 500);
         }
       }, 300);
     }
@@ -1222,7 +1231,31 @@
       `).join('') || '<tr><td colspan="6" class="p-4 text-center text-xs text-slate-400">尚無住戶資料</td></tr>';
       lucide.createIcons();
     }
+function moveModuleCard(cardId, direction) {
+      const defaultOrder = ['events', 'regulations', 'announcements', 'legal', 'dailylog', 'residents', 'housing', 'parking', 'repairs', 'operations'];
+      let saved = [];
+      try {
+        saved = (appData.meta && Array.isArray(appData.meta.cardOrder) && appData.meta.cardOrder.length > 0)
+          ? [...appData.meta.cardOrder]
+          : JSON.parse(localStorage.getItem('pm_card_order') || '[]');
+      } catch (e) { saved = []; }
 
+      let order = [...saved];
+      defaultOrder.forEach(id => { if (!order.includes(id)) order.push(id); });
+
+      const idx = order.indexOf(cardId);
+      const targetIdx = idx + direction;
+      if (idx === -1 || targetIdx < 0 || targetIdx >= order.length) return;
+
+      [order[idx], order[targetIdx]] = [order[targetIdx], order[idx]];
+      if (!appData.meta) appData.meta = {};
+      appData.meta.cardOrder = order;
+      localStorage.setItem('pm_card_order', JSON.stringify(order));
+      renderAll();
+      if (typeof syncToCloud === 'function' && accessToken) {
+        syncToCloud();
+      }
+    }
     function renderAll() {
       const commName = appData.meta.communityName || '尚未設定社區案場名稱';
       document.getElementById('dash-community-title').innerText = commName;
