@@ -146,7 +146,6 @@
       </button>
       <span class="text-xs text-slate-400" id="current-date-display"></span>
     </div>
-
     <!-- ================= 1. 總覽儀表板 ================= -->
     <section id="view-dashboard" class="space-y-6">
       <div class="paper-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-white to-slate-50">
@@ -645,12 +644,10 @@
       </div>
     </div>
   </div>
-
   <script>
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    // 自動從網址列參數讀取金鑰並儲存（解決手機重整或換機需重打金鑰的問題）
     (function autoLoadKeysFromUrl() {
       const params = new URLSearchParams(window.location.search);
       const urlClientId = params.get('cid');
@@ -666,6 +663,7 @@
     let driveFileId = null;
     let currentColorFilter = 'all';
     let tempDailyPhotos = [];
+    let editingDailyLogId = null;
 
     let appData = {
       meta: { communityName: '', phone: '', taxId: '', lastUpdated: new Date().toISOString() },
@@ -715,6 +713,7 @@
       const nav = document.getElementById('subpage-nav');
       tabName === 'dashboard' ? nav.classList.add('hidden') : nav.classList.remove('hidden');
       renderAll();
+      if (tabName === 'dailylog') renderDailyLogPreview();
     }
 
     function printElement(elementId) {
@@ -723,7 +722,7 @@
       window.print();
     }
 
-  // ================= 3. Google Drive API 私有連線 =================
+    // ================= 3. Google Drive API 私有連線 =================
     function initGoogleIdentity(clientId) {
       const checkInterval = setInterval(() => {
         if (window.google && window.google.accounts) {
@@ -737,7 +736,6 @@
                 return;
               }
               accessToken = tokenResponse.access_token;
-              // 記憶 Token 與過期時間（提前 100 秒視為過期），避免手機 Chrome 重開時彈窗被阻擋
               const expiresAt = Date.now() + ((tokenResponse.expires_in || 3600) - 100) * 1000;
               localStorage.setItem('pm_google_access_token', accessToken);
               localStorage.setItem('pm_google_token_expires', expiresAt.toString());
@@ -750,19 +748,16 @@
             },
           });
 
-          // 檢查本地是否已有未過期的 Token
           const savedToken = localStorage.getItem('pm_google_access_token');
           const savedExpires = Number(localStorage.getItem('pm_google_token_expires') || 0);
 
           if (savedToken && Date.now() < savedExpires) {
-            // Token 仍在 1 小時有效期内：直接連線讀取，不彈出登入視窗（手機不會失敗）
             accessToken = savedToken;
             const authBtn = document.getElementById('auth-btn');
             document.getElementById('auth-btn-text').innerText = '已連結雲端';
             authBtn.classList.replace('bg-emerald-600', 'bg-slate-800');
             findOrCreateDriveFile();
           } else {
-            // Token 已過期：手機瀏覽器會擋自動彈窗，改顯示提示由手動點擊
             localStorage.removeItem('pm_google_access_token');
             localStorage.removeItem('pm_google_token_expires');
             updateSyncUI('error', '雲端連線已逾時，請點右上角「連結雲端」');
@@ -787,7 +782,6 @@
 
     async function findOrCreateDriveFile() {
       try {
-        // 加上時間戳記與 no-store 防止手機瀏覽器抓到舊快取
         const query = encodeURIComponent(`name='${DATA_FILENAME}' and trashed=false`);
         const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -811,8 +805,9 @@
             appData = { ...appData, ...cloudData };
             if (appData.meta && appData.meta.geminiKey) localStorage.setItem('pm_gemini_key', appData.meta.geminiKey);
             if (appData.meta && appData.meta.clientId) localStorage.setItem('pm_google_client_id', appData.meta.clientId);
-            localStorage.setItem('pm_local_backup', JSON.stringify(appData));
+            try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) {}
             renderAll();
+            renderDailyLogPreview();
             updateSyncUI('synced', '已從雲端載入最新資料');
           }
         } else {
@@ -840,8 +835,7 @@
     }
 
     async function syncToCloud() {
-      // 無論雲端是否連線，先立刻寫入本機備份並更新畫面
-      localStorage.setItem('pm_local_backup', JSON.stringify(appData));
+      try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) { console.warn('本機快取容量已滿'); }
       renderAll();
 
       if (!accessToken || !driveFileId) {
@@ -860,7 +854,6 @@
           body: JSON.stringify(appData, null, 2)
         });
 
-        // 檢查狀態碼，避免 Token 過期寫入失敗卻顯示「已同步」
         if (res.status === 401) {
           handleTokenExpired();
           alert('⚠️ 雲端登入已超過 1 小時逾時，本次修改尚未寫入雲端！\n請點選右上角「連結雲端」重新驗證後，再按一次儲存。');
@@ -892,14 +885,219 @@
         authBtn.classList.replace('bg-slate-800', 'bg-emerald-600');
       }
       updateSyncUI('error', '登入逾時，請點擊「連結雲端」重新驗證');
-    }// 5-5 工作日誌（支援新增、點擊歷史紀錄載入修改、覆蓋更新與刪除）
-    let editingDailyLogId = null;
+    }
 
+    // ================= 4. 介面狀態與圖片壓縮工具 =================
+    function updateSyncUI(status, text) {
+      const statusText = document.getElementById('sync-status-text');
+      const badge = document.getElementById('sync-badge');
+      const dot = document.getElementById('sync-dot');
+      const label = document.getElementById('sync-label');
+      const driveFileEl = document.getElementById('dash-drive-file');
+
+      if (statusText) statusText.innerText = text;
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.classList.add('inline-flex');
+      }
+      if (dot && label) {
+        if (status === 'synced') {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          label.innerText = '已同步';
+          if (driveFileEl) driveFileEl.innerText = `${DATA_FILENAME} (已同步)`;
+        } else if (status === 'syncing') {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+          label.innerText = '同步中';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+          label.innerText = '未同步';
+        }
+      }
+    }
+
+    function compressImageToBase64(file, maxWidth = 550, quality = 0.55) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width;
+            let h = img.height;
+            if (w > maxWidth) {
+              h = Math.round((h * maxWidth) / w);
+              w = maxWidth;
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ================= 5. 各模組業務邏輯 =================
+    function addEvent() {
+      const date = document.getElementById('event-date').value;
+      const type = document.getElementById('event-type').value;
+      const color = document.getElementById('event-color').value;
+      const content = document.getElementById('event-content').value.trim();
+      if (!content) return;
+      appData.events.unshift({ id: Date.now(), date, type, color, content });
+      document.getElementById('event-content').value = '';
+      syncToCloud();
+    }
+
+    function setEventColorFilter(color) {
+      currentColorFilter = color;
+      ['all', 'red', 'blue', 'green'].forEach(c => {
+        const btn = document.getElementById(`filter-btn-${c}`);
+        if (!btn) return;
+        btn.classList.toggle('ring-2', c === color);
+        btn.classList.toggle('ring-slate-400', c === color);
+      });
+      renderEventsList();
+    }
+
+    async function uploadRegulation() {
+      const title = document.getElementById('reg-title').value.trim();
+      const note = document.getElementById('reg-note').value.trim();
+      const file = document.getElementById('reg-file').files[0];
+      if (!title || !file) { alert('請填寫規範名稱並選擇檔案！'); return; }
+      if (!accessToken) { alert('請先點右上角「連結雲端」後再上傳檔案！'); return; }
+
+      const btn = document.getElementById('reg-upload-btn');
+      btn.disabled = true;
+      btn.innerText = '上傳中...';
+      try {
+        const metadata = { name: `[社區規範]_${title}_${file.name}`, mimeType: file.type };
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', file);
+        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: form
+        });
+        const data = await res.json();
+        appData.regulations.unshift({ id: Date.now(), title, note, fileName: file.name, driveFileId: data.id });
+        document.getElementById('reg-title').value = '';
+        document.getElementById('reg-note').value = '';
+        document.getElementById('reg-file').value = '';
+        await syncToCloud();
+      } catch (e) {
+        alert('上傳失敗，請確認雲端連線狀態');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '上傳至雲端歸檔';
+      }
+    }
+
+    function previewRegulation(fileId, title) {
+      document.getElementById('reg-preview-title').innerText = title;
+      document.getElementById('reg-preview-frame').src = `https://drive.google.com/file/d/${fileId}/preview`;
+      document.getElementById('reg-preview-box').classList.remove('hidden');
+    }
+
+    function updateAnnPreview() {
+      const meta = document.getElementById('ann-meta')?.value || '';
+      const title = document.getElementById('ann-title')?.value || '';
+      const body = document.getElementById('ann-body')?.value || '';
+      if (document.getElementById('prev-meta')) document.getElementById('prev-meta').innerText = meta;
+      if (document.getElementById('prev-title')) document.getElementById('prev-title').innerText = title;
+      if (document.getElementById('prev-body')) document.getElementById('prev-body').innerText = body;
+    }
+
+    function saveAnnouncement() {
+      appData.announcements.unshift({
+        id: Date.now(),
+        meta: document.getElementById('ann-meta').value,
+        title: document.getElementById('ann-title').value,
+        body: document.getElementById('ann-body').value,
+        date: new Date().toISOString().split('T')[0]
+      });
+      syncToCloud();
+      alert('公告已儲存至雲端檔案庫！');
+    }
+
+    function applyLegalTemplate(type) {
+      const comm = appData.meta.communityName || '本社區管理委員會';
+      if (type === 'fee') {
+        document.getElementById('leg-body').value = `台端積欠${comm}管理費多期，經屢次催告仍未繳納，依公寓大廈管理條例第21條規定，請於文到七日內如數繳清，逾期將依法聲請法院發給支付命令並訴請強制執行，切勿自誤。`;
+      } else if (type === 'reno') {
+        document.getElementById('leg-body').value = `台端於本社區進行室內裝修工程，未依規定申請施工許可並違反施工時間規範，請於文到三日內立即停工並補辦手續，否則本會將依法報請主管機關裁處。`;
+      }
+      renderLegalGrid();
+    }
+
+    function renderLegalGrid() {
+      const copy = document.getElementById('leg-copy')?.value || '正本';
+      const sender = document.getElementById('leg-sender')?.value || '';
+      const sAddr = document.getElementById('leg-sender-addr')?.value || '';
+      const receiver = document.getElementById('leg-receiver')?.value || '';
+      const rAddr = document.getElementById('leg-receiver-addr')?.value || '';
+      const body = document.getElementById('leg-body')?.value || '';
+      if (document.getElementById('leg-char-count')) document.getElementById('leg-char-count').innerText = `${body.length} 字`;
+
+      const chars = body.split('');
+      const perPage = 200;
+      const totalPages = Math.max(1, Math.ceil(chars.length / perPage));
+      let html = '';
+
+      for (let p = 0; p < totalPages; p++) {
+        const pageChars = chars.slice(p * perPage, (p + 1) * perPage);
+        let rowsHtml = '';
+        for (let r = 0; r < 10; r++) {
+          let tds = '';
+          for (let c = 0; c < 20; c++) {
+            const ch = pageChars[r * 20 + c] || '';
+            tds += `<td>${ch === '\n' ? '' : ch}</td>`;
+          }
+          rowsHtml += `<tr>${tds}</tr>`;
+        }
+        html += `
+          <div class="paper-card p-6 bg-white border-2 border-rose-800 kai-font">
+            <div class="flex justify-between items-center border-b border-rose-800 pb-2 mb-3 text-rose-900">
+              <span class="font-bold text-lg">郵局存證信函用紙（${copy}）</span>
+              <span class="text-xs">第 ${p + 1} 頁 / 共 ${totalPages} 頁</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs mb-3 text-slate-700 border border-rose-800 p-2">
+              <div><strong>寄件人：</strong>${sender}</div>
+              <div><strong>地址：</strong>${sAddr}</div>
+              <div><strong>收件人：</strong>${receiver}</div>
+              <div><strong>地址：</strong>${rAddr}</div>
+            </div>
+            <table class="legal-grid">${rowsHtml}</table>
+          </div>
+        `;
+      }
+      const area = document.getElementById('legal-print-area');
+      if (area) area.innerHTML = html;
+    }
+
+    function saveLegalLetter() {
+      appData.legalLetters.unshift({
+        id: Date.now(),
+        copy: document.getElementById('leg-copy').value,
+        sender: document.getElementById('leg-sender').value,
+        receiver: document.getElementById('leg-receiver').value,
+        body: document.getElementById('leg-body').value,
+        date: new Date().toISOString().split('T')[0]
+      });
+      syncToCloud();
+      alert('存證信函已儲存至雲端！');
+    }
+
+    // 5-5 工作日誌（支援新增、點擊歷史紀錄載入修改、覆蓋更新與刪除）
     async function handleDailyLogPhotos(event) {
       const files = Array.from(event.target.files).slice(0, 4);
       tempDailyPhotos = [];
       for (const f of files) {
-        const b64 = await compressImageToBase64(f, 700, 0.65);
+        const b64 = await compressImageToBase64(f, 550, 0.55);
         tempDailyPhotos.push(b64);
       }
       renderDailyLogPreview();
@@ -923,13 +1121,13 @@
     function renderDailyLogHistoryList() {
       let container = document.getElementById('dl-history-list');
       if (!container) {
-        const previewArea = document.getElementById('dl-prev-photos')?.closest('.bg-white, .card, section, div');
+        const previewArea = document.getElementById('dailylog-print-area');
         if (previewArea && previewArea.parentElement) {
           const wrapper = document.createElement('div');
-          wrapper.className = 'mt-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm no-print';
+          wrapper.className = 'lg:col-span-12 mt-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm no-print';
           wrapper.innerHTML = `
             <div class="flex justify-between items-center mb-3">
-              <h4 class="font-bold text-slate-800">📋 歷史工作日誌紀錄（點擊「編輯 / 檢視」可載入修改）</h4>
+              <h4 class="font-bold text-slate-800">📋 歷史工作日誌紀錄（點擊「編輯 / 檢視」可載入修改與列印）</h4>
               <button type="button" onclick="resetDailyLogForm()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium">+ 新增空白日誌</button>
             </div>
             <div id="dl-history-list" class="space-y-2"></div>
@@ -952,6 +1150,7 @@
             <div>
               <div class="font-bold text-slate-800 text-sm">
                 ${log.date || '未填日期'} ｜ 天氣：${log.weather || '-'} ｜ 值勤：${log.staff || '-'}
+                ${Array.isArray(log.photos) && log.photos.length > 0 ? `<span class="ml-1 text-xs text-emerald-700">📷(${log.photos.length}張)</span>` : ''}
                 ${isEditing ? '<span class="ml-2 text-xs bg-amber-500 text-white px-2 py-0.5 rounded">目前編輯中</span>' : ''}
               </div>
               <div class="text-xs text-slate-500 mt-1 line-clamp-1">${log.content || '(無內容)'}</div>
@@ -1029,7 +1228,6 @@
         alert('工作日誌已儲存並成功同步至 Google 雲端硬碟！');
       }
     }
-
     // 5-6 住戶清冊與 Excel
     function addResident() {
       const unit = document.getElementById('res-unit').value.trim();
@@ -1198,7 +1396,8 @@
       `).join('') || '<tr><td colspan="6" class="p-4 text-center text-xs text-slate-400">尚無住戶資料</td></tr>';
       lucide.createIcons();
     }
-function moveModuleCard(cardId, direction) {
+
+    function moveModuleCard(cardId, direction) {
       const defaultOrder = ['events', 'regulations', 'announcements', 'legal', 'dailylog', 'residents', 'housing', 'parking', 'repairs', 'operations'];
       let saved = [];
       try {
@@ -1223,6 +1422,7 @@ function moveModuleCard(cardId, direction) {
         syncToCloud();
       }
     }
+
     function renderAll() {
       const commName = appData.meta.communityName || '尚未設定社區案場名稱';
       document.getElementById('dash-community-title').innerText = commName;
@@ -1275,7 +1475,6 @@ function moveModuleCard(cardId, direction) {
         </div>
       `).join('');
 
-      // 儀表板近期紀要
       document.getElementById('dash-recent-events').innerHTML = appData.events.slice(0, 5).map(e => `
         <div class="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0">
           <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">${e.date}</span>
@@ -1284,7 +1483,6 @@ function moveModuleCard(cardId, direction) {
         </div>
       `).join('') || '<p class="text-slate-400 text-xs py-4 text-center">尚無排定紀要事項</p>';
 
-      // 渲染社區規範
       document.getElementById('regulations-list').innerHTML = appData.regulations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between">
           <div>
@@ -1298,7 +1496,6 @@ function moveModuleCard(cardId, direction) {
         </div>
       `).join('') || '<p class="text-xs text-slate-400 col-span-2 text-center py-4">尚未上傳任何規範文件</p>';
 
-      // 渲染住戶統計
       const totalRes = appData.residents.length;
       const selfRes = appData.residents.filter(r => r.type === '屋主自住').length;
       const rentRes = appData.residents.filter(r => r.type === '承租住戶').length;
@@ -1311,7 +1508,6 @@ function moveModuleCard(cardId, direction) {
         { label: '空屋未入住', val: emptyRes, color: 'text-slate-500' }
       ].map(s => `<div class="paper-card p-3 text-center"><p class="text-xs text-slate-500">${s.label}</p><p class="text-xl font-bold ${s.color}">${s.val}</p></div>`).join('');
 
-      // 渲染房屋帶看
       document.getElementById('housing-list').innerHTML = appData.housing.map(h => {
         const badge = h.status === '可帶看' ? 'bg-emerald-100 text-emerald-800' : h.status === '待補合約' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800';
         return `<div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
@@ -1320,7 +1516,6 @@ function moveModuleCard(cardId, direction) {
         </div>`;
       }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無帶看委託紀錄</p>';
 
-      // 渲染車位租賃
       document.getElementById('parking-list').innerHTML = appData.parking.map(p => `
         <div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
           <div><strong class="mr-2">${p.spot}</strong><span class="text-xs bg-slate-100 px-2 py-0.5 rounded mr-2">${p.vtype}</span><span class="text-slate-600 mr-2">出租:${p.owner}</span><span class="text-emerald-700 font-medium">承租/車牌:${p.tenant || '待媒合'}</span></div>
@@ -1328,7 +1523,6 @@ function moveModuleCard(cardId, direction) {
         </div>
       `).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無車位租賃紀錄</p>';
 
-      // 渲染報修
       document.getElementById('repairs-list').innerHTML = appData.repairs.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
           <div class="flex items-center gap-3">
@@ -1342,7 +1536,6 @@ function moveModuleCard(cardId, direction) {
         </div>
       `).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無報修工單</p>';
 
-      // 渲染裝潢與廠商
       document.getElementById('renovations-list').innerHTML = appData.renovations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex justify-between text-sm">
           <div><strong class="mr-2">${r.unit}</strong><span class="text-slate-600 mr-2">期間:${r.period}</span><span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">保證金:${r.deposit}</span></div>
@@ -1384,7 +1577,7 @@ function moveModuleCard(cardId, direction) {
       const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r=>r.status!=='已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
 
       try {
-       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
           body: JSON.stringify({
