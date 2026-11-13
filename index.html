@@ -733,49 +733,32 @@
             scope: SCOPES,
             callback: async (tokenResponse) => {
               if (tokenResponse.error !== undefined) {
-                console.log('靜默登入需互動確認：', tokenResponse.error);
-                const authBtn = document.getElementById('auth-btn');
-                if (authBtn) authBtn.classList.add('animate-pulse', 'ring-2', 'ring-emerald-300');
+                console.log('需要手動點擊連結雲端：', tokenResponse.error);
                 return;
               }
-              localStorage.setItem('pm_has_authed', 'true');
               accessToken = tokenResponse.access_token;
               updateSyncUI('syncing', '正在連線雲端硬碟...');
               const authBtn = document.getElementById('auth-btn');
-              authBtn.classList.remove('animate-pulse', 'ring-2', 'ring-emerald-300');
               document.getElementById('auth-btn-text').innerText = '已連結雲端';
               authBtn.classList.replace('bg-emerald-600', 'bg-slate-800');
               await findOrCreateDriveFile();
             },
           });
-
-          // 1. 網頁載入先嘗試無畫面靜默連線
           setTimeout(() => {
             if (!accessToken) {
-              try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) {}
+              try { tokenClient.requestAccessToken({ prompt: 'none' }); } catch (e) {}
             }
-          }, 400);
-
-          // 2. 手機端防彈窗對策：若靜默失敗，只要手指點一下螢幕任何位置即自動觸發連線
-          const autoTriggerOnTap = () => {
-            if (!accessToken && localStorage.getItem('pm_has_authed') === 'true') {
-              try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) {}
-            }
-            document.removeEventListener('click', autoTriggerOnTap);
-            document.removeEventListener('touchstart', autoTriggerOnTap);
-          };
-          document.addEventListener('click', autoTriggerOnTap, { once: true });
-          document.addEventListener('touchstart', autoTriggerOnTap, { once: true });
+          }, 500);
         }
       }, 300);
     }
 
-    function handleAuthClick() {
+   function handleAuthClick() {
       const clientId = localStorage.getItem('pm_google_client_id');
       if (!clientId) { openConfigModal(); return; }
       if (!tokenClient) {
         initGoogleIdentity(clientId);
-        setTimeout(() => tokenClient.requestAccessToken({ prompt: 'consent' }), 500);
+        setTimeout(() => tokenClient.requestAccessToken({ prompt: '' }), 500);
       } else {
         tokenClient.requestAccessToken({ prompt: '' });
       }
