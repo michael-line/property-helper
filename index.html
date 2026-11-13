@@ -847,6 +847,38 @@
       }
     }
 
+    function migrateLegacyDailyLogs() {
+      if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
+      if (!Array.isArray(appData.dailyLogs) || appData.dailyLogs.length === 0) return;
+
+      appData.dailyLogs.forEach(oldLog => {
+        const legacyId = oldLog.id || Date.now();
+        // 避免重複轉換
+        if (appData.workLogs.some(w => w.id === legacyId || w.legacyDailyLogId === legacyId)) return;
+
+        const metaParts = [];
+        if (oldLog.weather) metaParts.push(`天氣：${oldLog.weather}`);
+        if (oldLog.staff) metaParts.push(`值勤：${oldLog.staff}`);
+        if (oldLog.elecCurr || oldLog.waterCurr) {
+          metaParts.push(`公電 ${oldLog.elecPrev || 0}→${oldLog.elecCurr || 0} / 公水 ${oldLog.waterPrev || 0}→${oldLog.waterCurr || 0}`);
+        }
+        const headerLine = metaParts.length > 0 ? `【${metaParts.join(' ｜ ')}】\n` : '';
+
+        appData.workLogs.push({
+          id: legacyId,
+          legacyDailyLogId: legacyId,
+          date: oldLog.date || new Date().toISOString().split('T')[0],
+          type: '工作日誌',
+          color: 'default',
+          content: `${headerLine}${oldLog.content || ''}`.trim(),
+          isStarEvent: false,
+          photos: Array.isArray(oldLog.photos) ? [...oldLog.photos] : []
+        });
+      });
+      // 依日期由新到舊排序
+      appData.workLogs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    }
+
     async function findOrCreateDriveFile() {
       try {
         const query = encodeURIComponent(`name='${DATA_FILENAME}' and trashed=false`);
@@ -867,12 +899,12 @@
           if (fileRes.ok) {
             const cloudData = await fileRes.json();
             appData = { ...appData, ...cloudData };
-            if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
+            migrateLegacyDailyLogs();
             if (appData.meta && appData.meta.geminiKey) localStorage.setItem('pm_gemini_key', appData.meta.geminiKey);
             if (appData.meta && appData.meta.clientId) localStorage.setItem('pm_google_client_id', appData.meta.clientId);
             try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) {}
             renderAll();
-            updateSyncUI('synced', '已從雲端載入最新資料');
+            updateSyncUI('synced', '已從雲端載入最新資料（含歷史日誌）');
           }
         } else {
           await createNewDriveFile();
