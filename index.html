@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>物業小幫手 · 私有雲端全功能版</title>
+  <title>小A · 物業私有雲端全功能版</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Identity Services -->
@@ -71,20 +71,20 @@
 
   <!-- 頂部導覽列 -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')">
-        <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm">
-          <i data-lucide="building-2" class="w-5 h-5"></i>
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="switchTab('dashboard')">
+        <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+          <i data-lucide="building-2" class="w-4 h-4"></i>
         </div>
         <div>
-          <h1 class="font-bold text-slate-800 text-base sm:text-lg leading-tight" id="header-community-name">物業小幫手 · 私有雲端版</h1>
-          <p class="text-xs text-slate-500 hidden sm:block" id="sync-status-text">尚未連線至 Google 雲端硬碟</p>
+          <h1 class="font-bold text-slate-800 text-lg leading-none tracking-wide" id="header-community-name">小A</h1>
+          <p class="text-[11px] text-slate-500 hidden sm:block mt-0.5" id="sync-status-text">尚未連線至 Google 雲端硬碟</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-1.5 sm:gap-2">
+      <div class="flex items-center gap-1 sm:gap-2">
         <!-- 同步狀態燈 -->
-        <span id="sync-badge" class="hidden items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+        <span id="sync-badge" class="hidden items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
           <span class="w-2 h-2 rounded-full bg-slate-400" id="sync-dot"></span>
           <span id="sync-label" class="hidden md:inline">離線</span>
         </span>
@@ -114,8 +114,8 @@
         </button>
 
         <!-- Google 登入 -->
-        <button id="auth-btn" onclick="handleAuthClick()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition">
-          <i data-lucide="cloud" class="w-4 h-4"></i>
+        <button id="auth-btn" onclick="handleAuthClick()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-2.5 py-2 rounded-lg flex items-center gap-1 shadow-sm transition shrink-0">
+          <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
           <span id="auth-btn-text">連結雲端</span>
         </button>
       </div>
@@ -123,10 +123,10 @@
   </header>
 
   <!-- 主內容區 -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
     
     <!-- 首次設定提示橫幅 -->
-    <div id="setup-banner" class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
+    <div id="setup-banner" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
       <div class="flex items-start gap-3">
         <i data-lucide="key-round" class="w-5 h-5 text-amber-600 mt-0.5 shrink-0"></i>
         <div class="text-sm text-amber-900">
@@ -140,60 +140,61 @@
     </div>
 
     <!-- 返回總覽導覽列 -->
-    <div id="subpage-nav" class="hidden mb-5 flex items-center justify-between no-print">
+    <div id="subpage-nav" class="hidden mb-4 flex items-center justify-between no-print">
       <button onclick="switchTab('dashboard')" class="text-sm text-slate-600 hover:text-emerald-600 flex items-center gap-1.5 font-medium">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> 返回營運總覽儀表板
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> 返回小A總覽
       </button>
       <span class="text-xs text-slate-400" id="current-date-display"></span>
     </div>
+
     <!-- ================= 1. 總覽儀表板 ================= -->
-    <section id="view-dashboard" class="space-y-6">
-      <div class="paper-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-white to-slate-50">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">物業全功能模式</span>
-            <span class="text-xs text-slate-500" id="today-full-date"></span>
-          </div>
-          <h2 class="text-xl font-bold text-slate-800 mt-1" id="dash-community-title">尚未設定社區案場名稱</h2>
-          <div class="flex flex-wrap gap-4 mt-2 text-xs text-slate-600">
-            <span>案場電話：<strong id="dash-phone">未設定</strong></span>
-            <span>案場統編：<strong id="dash-taxid">未設定</strong></span>
-            <span>雲端資料庫：<strong id="dash-drive-file" class="text-emerald-600">本機暫存模式</strong></span>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button onclick="exportGuardHandover()" class="px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-900 text-white rounded-lg flex items-center gap-1.5">
-            <i data-lucide="shield" class="w-3.5 h-3.5"></i> 匯出保全交接參考表
-          </button>
-          <button onclick="openConfigModal()" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-700">
-            編輯案場資料
-          </button>
-        </div>
+    <section id="view-dashboard" class="space-y-5">
+      <!-- 隱藏原本上方的社區資訊區塊（保留隱藏元素供系統讀取資料不報錯） -->
+      <div class="hidden">
+        <span id="today-full-date"></span>
+        <h2 id="dash-community-title"></h2>
+        <strong id="dash-phone"></strong>
+        <strong id="dash-taxid"></strong>
+        <strong id="dash-drive-file"></strong>
       </div>
 
-      <!-- 模組卡片網格 -->
+      <!-- 彩色方塊模組總覽區（集中排列在最上方，點擊展開進入作業） -->
       <div>
-        <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-          <i data-lucide="layout-grid" class="w-4 h-4 text-emerald-600"></i> 社區功能模組數據總覽（點擊卡片進入作業）
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="module-cards-grid"></div>
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-emerald-600"></i> 功能模組總覽（點擊方塊展開作業）
+          </h3>
+          <button type="button" onclick="toggleCardSortMode()" id="sort-mode-btn" class="text-xs px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">
+            ⇅ 調整順序
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3" id="module-cards-grid"></div>
       </div>
 
       <!-- 即時業務工作站 -->
-      <div class="paper-card p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+      <div class="paper-card p-4 sm:p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
           <div class="flex items-center gap-2">
-            <i data-lucide="clipboard-check" class="w-5 h-5 text-emerald-600"></i>
-            <h3 class="font-bold text-slate-800">即時業務工作站 · 大事紀要與近期重點工作</h3>
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>
+            <h3 class="font-bold text-sm text-slate-800">大事紀要與近期重點工作</h3>
           </div>
-          <button onclick="switchTab('events')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 管理與新增
+          <button onclick="switchTab('events')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> 新增
           </button>
         </div>
         <div id="dash-recent-events" class="space-y-2 text-sm text-slate-600"></div>
       </div>
-    </section>
 
+      <!-- 原本的兩個操作按鈕移到最下方 -->
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <button onclick="exportGuardHandover()" class="px-3 py-2.5 text-xs font-medium bg-slate-800 hover:bg-slate-900 text-white rounded-xl flex items-center justify-center gap-1.5 shadow-xs">
+          <i data-lucide="shield" class="w-4 h-4"></i> 匯出保全交接參考表
+        </button>
+        <button onclick="openConfigModal()" class="px-3 py-2.5 text-xs font-medium bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-700 flex items-center justify-center gap-1.5 shadow-xs">
+          <i data-lucide="building" class="w-4 h-4"></i> 編輯案場資料
+        </button>
+      </div>
+    </section>
     <!-- ================= 2. 大事紀要紀錄 ================= -->
     <section id="view-events" class="hidden space-y-4">
       <div class="paper-card p-5">
@@ -230,7 +231,7 @@
       </div>
     </section>
 
-    <!-- ================= 3. 社區規範 (上傳至 Google Drive 並內嵌預覽) ================= -->
+    <!-- ================= 3. 社區規範 ================= -->
     <section id="view-regulations" class="hidden space-y-4">
       <div class="paper-card p-5">
         <h2 class="text-lg font-bold text-slate-800 mb-1">社區規範與規約辦法資料庫</h2>
@@ -243,7 +244,6 @@
         </div>
         <div id="regulations-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </div>
-      <!-- 線上閱讀器 Modal / 區塊 -->
       <div id="reg-preview-box" class="hidden paper-card p-4 space-y-3">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2">
           <h3 class="font-bold text-sm text-slate-800" id="reg-preview-title">文件預覽</h3>
@@ -302,7 +302,6 @@
     <!-- ================= 5. 郵局 10206 存證信函製作 ================= -->
     <section id="view-legal" class="hidden space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- 編輯區 -->
         <div class="lg:col-span-5 paper-card p-5 space-y-3 no-print">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-bold text-slate-800">存證信函 (郵局10206格式)</h2>
@@ -344,14 +343,11 @@
           <button onclick="saveLegalLetter()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2 rounded-lg font-medium">儲存存證信函至雲端</button>
         </div>
 
-        <!-- 郵局 10206 格線預覽區 -->
-        <div id="legal-print-area" class="lg:col-span-7 space-y-6">
-          <!-- 由 JS 動態生成 20x10 格線頁 -->
-        </div>
+        <div id="legal-print-area" class="lg:col-span-7 space-y-6"></div>
       </div>
     </section>
 
-    <!-- ================= 6. 工作日誌製作 (含照片壓縮與水電抄表) ================= -->
+    <!-- ================= 6. 工作日誌製作 ================= -->
     <section id="view-dailylog" class="hidden space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div class="lg:col-span-5 paper-card p-5 space-y-4 no-print">
@@ -409,7 +405,6 @@
           <button onclick="saveDailyLog()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2 rounded-lg font-medium">儲存日誌至雲端</button>
         </div>
 
-        <!-- A4 日誌預覽區 -->
         <div id="dailylog-print-area" class="lg:col-span-7 paper-card p-6 bg-white border-2 border-slate-300 kai-font">
           <h2 class="text-xl font-bold text-center border-b-2 border-slate-800 pb-2 mb-3" id="dl-prev-title">社區物業服務工作日誌</h2>
           <table class="w-full border-collapse border border-slate-800 text-sm mb-3">
@@ -435,9 +430,8 @@
       </div>
     </section>
 
-    <!-- ================= 7. 住戶清冊 (含統計與 Excel 匯入匯出) ================= -->
+    <!-- ================= 7. 住戶清冊 ================= -->
     <section id="view-residents" class="hidden space-y-4">
-      <!-- 五大統計卡片 -->
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="res-stats-bar"></div>
 
       <div class="paper-card p-5">
@@ -531,7 +525,7 @@
       </div>
     </section>
 
-    <!-- ================= 10. 報修管制 (五階段狀態與照片上傳) ================= -->
+    <!-- ================= 10. 報修管制 ================= -->
     <section id="view-repairs" class="hidden space-y-4">
       <div class="paper-card p-5">
         <h2 class="text-lg font-bold text-slate-800 mb-4">社區報修工單全生命週期追蹤</h2>
@@ -554,7 +548,6 @@
 
     <!-- ================= 11. 裝潢施工、廠商維保與政府申報 ================= -->
     <section id="view-operations" class="hidden space-y-6">
-      <!-- 裝潢施工 -->
       <div class="paper-card p-5">
         <h2 class="text-lg font-bold text-slate-800 mb-3">裝潢施工與保證金列管</h2>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4">
@@ -566,7 +559,6 @@
         <div id="renovations-list" class="space-y-2"></div>
       </div>
 
-      <!-- 合約廠商與政府申報 -->
       <div class="paper-card p-5">
         <h2 class="text-lg font-bold text-slate-800 mb-3">合約廠商明細與法定政府申報排程</h2>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4">
@@ -584,7 +576,7 @@
 
   </main>
 
-  <!-- 設定 Modal (Client ID, Gemini API Key, 案場資料) -->
+  <!-- 設定 Modal -->
   <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -603,7 +595,7 @@
         </div>
         <hr class="border-slate-100">
         <div>
-          <label class="block font-medium text-slate-700 mb-1">社區案場名稱</label>
+          <label class="block font-medium text-slate-700 mb-1">社區案場名稱 (列印公告與日誌時顯示)</label>
           <input type="text" id="cfg-comm-name" placeholder="例如：最上境社區管理委員會" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -664,6 +656,7 @@
     let currentColorFilter = 'all';
     let tempDailyPhotos = [];
     let editingDailyLogId = null;
+    let isSortMode = false;
 
     let appData = {
       meta: { communityName: '', phone: '', taxId: '', lastUpdated: new Date().toISOString() },
@@ -712,8 +705,21 @@
 
       const nav = document.getElementById('subpage-nav');
       tabName === 'dashboard' ? nav.classList.add('hidden') : nav.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       renderAll();
       if (tabName === 'dailylog') renderDailyLogPreview();
+    }
+
+    function toggleCardSortMode() {
+      isSortMode = !isSortMode;
+      const btn = document.getElementById('sort-mode-btn');
+      if (btn) {
+        btn.innerText = isSortMode ? '✓ 完成排序' : '⇅ 調整順序';
+        btn.className = isSortMode
+          ? 'text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium'
+          : 'text-xs px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50';
+      }
+      renderAll();
     }
 
     function printElement(elementId) {
@@ -1092,7 +1098,7 @@
       alert('存證信函已儲存至雲端！');
     }
 
-    // 5-5 工作日誌（支援新增、點擊歷史紀錄載入修改、覆蓋更新與刪除）
+    // 5-5 工作日誌
     async function handleDailyLogPhotos(event) {
       const files = Array.from(event.target.files).slice(0, 4);
       tempDailyPhotos = [];
@@ -1178,6 +1184,7 @@
       document.getElementById('dl-content').value = log.content || '';
       tempDailyPhotos = Array.isArray(log.photos) ? [...log.photos] : [];
       renderDailyLogPreview();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetDailyLogForm() {
@@ -1228,6 +1235,7 @@
         alert('工作日誌已儲存並成功同步至 Google 雲端硬碟！');
       }
     }
+
     // 5-6 住戶清冊與 Excel
     function addResident() {
       const unit = document.getElementById('res-unit').value.trim();
@@ -1281,7 +1289,6 @@
       reader.readAsBinaryString(file);
     }
 
-    // 5-7 房屋出售/出租帶看
     function addHousing() {
       const unit = document.getElementById('hou-unit').value.trim();
       const type = document.getElementById('hou-type').value;
@@ -1294,7 +1301,6 @@
       syncToCloud();
     }
 
-    // 5-8 車位出租/承租
     function addParking() {
       const spot = document.getElementById('pkg-spot').value.trim();
       const vtype = document.getElementById('pkg-vtype').value;
@@ -1307,7 +1313,6 @@
       syncToCloud();
     }
 
-    // 5-9 報修管制 (多階段流轉 + 照片壓縮)
     async function addRepair() {
       const cat = document.getElementById('rep-cat').value;
       const loc = document.getElementById('rep-loc').value.trim();
@@ -1335,7 +1340,6 @@
       }
     }
 
-    // 5-10 裝潢、廠商與申報
     function addRenovation() {
       const unit = document.getElementById('ren-unit').value.trim();
       const period = document.getElementById('ren-period').value.trim();
@@ -1398,7 +1402,7 @@
     }
 
     function moveModuleCard(cardId, direction) {
-      const defaultOrder = ['events', 'regulations', 'announcements', 'legal', 'dailylog', 'residents', 'housing', 'parking', 'repairs', 'operations'];
+      const defaultOrder = ['dailylog', 'repairs', 'events', 'residents', 'announcements', 'regulations', 'legal', 'housing', 'parking', 'operations'];
       let saved = [];
       try {
         saved = (appData.meta && Array.isArray(appData.meta.cardOrder) && appData.meta.cardOrder.length > 0)
@@ -1424,11 +1428,8 @@
     }
 
     function renderAll() {
-      const commName = appData.meta.communityName || '尚未設定社區案場名稱';
-      document.getElementById('dash-community-title').innerText = commName;
-      document.getElementById('header-community-name').innerText = appData.meta.communityName ? `${appData.meta.communityName} · 物業小幫手` : '物業小幫手 · 私有雲端版';
-      document.getElementById('dash-phone').innerText = appData.meta.phone || '未設定';
-      document.getElementById('dash-taxid').innerText = appData.meta.taxId || '未設定';
+      // 頂部標題固定顯示「小A」
+      document.getElementById('header-community-name').innerText = '小A';
       if (appData.meta.communityName) {
         document.getElementById('prev-comm-name').innerText = `${appData.meta.communityName} 公告`;
         document.getElementById('prev-sign').innerText = `${appData.meta.communityName} 敬啟`;
@@ -1436,16 +1437,16 @@
 
       const activeRepairs = appData.repairs.filter(r => r.status !== '已驗收結案').length;
       const defaultCards = [
-        { id: 'events', title: '大事紀要紀錄', count: appData.events.length, unit: '筆', desc: '四色分類與重點工作排程', icon: 'calendar-days', color: 'text-blue-600 bg-blue-50' },
-        { id: 'regulations', title: '社區規範', count: appData.regulations.length, unit: '份', desc: '雲端 PDF/圖檔歸檔與線上閱讀', icon: 'book-open', color: 'text-teal-600 bg-teal-50' },
-        { id: 'announcements', title: '公告製作', count: appData.announcements.length, unit: '則', desc: 'A4 公文公告套印與 PDF', icon: 'file-text', color: 'text-indigo-600 bg-indigo-50' },
-        { id: 'legal', title: '存證信函', count: appData.legalLetters.length, unit: '件', desc: '郵局 10206 格式 20x10 格線', icon: 'scale', color: 'text-rose-600 bg-rose-50' },
-        { id: 'dailylog', title: '工作日誌', count: appData.dailyLogs.length, unit: '份', desc: '值勤抄錶與照片 2x2 輸出', icon: 'clipboard-list', color: 'text-cyan-600 bg-cyan-50' },
-        { id: 'residents', title: '住戶清冊', count: appData.residents.length, unit: '戶', desc: '進駐統計與 Excel 批次匯入出', icon: 'users', color: 'text-emerald-600 bg-emerald-50' },
-        { id: 'housing', title: '售屋 / 出租', count: appData.housing.length, unit: '戶', desc: '房仲帶看門禁燈號核驗管制', icon: 'home', color: 'text-violet-600 bg-violet-50' },
-        { id: 'parking', title: '車位租賃', count: appData.parking.length, unit: '件', desc: '社區車位媒合與車牌 eTag 管制', icon: 'car', color: 'text-sky-600 bg-sky-50' },
-        { id: 'repairs', title: '報修管制', count: activeRepairs, unit: '處理中', desc: `累計已結案 ${appData.repairs.length - activeRepairs} 單`, icon: 'wrench', color: 'text-amber-600 bg-amber-50' },
-        { id: 'operations', title: '裝潢/廠商/申報', count: appData.renovations.length + appData.vendors.length, unit: '項', desc: '施工保證金、廠商與法定申報', icon: 'shield-check', color: 'text-orange-600 bg-orange-50' }
+        { id: 'dailylog', title: '工作日誌', count: appData.dailyLogs.length, unit: '份', icon: 'clipboard-list', tileBg: 'bg-cyan-50 border-cyan-200 hover:bg-cyan-100/70', iconBg: 'bg-cyan-600 text-white', numColor: 'text-cyan-900' },
+        { id: 'repairs', title: '報修管制', count: activeRepairs, unit: '件', icon: 'wrench', tileBg: 'bg-amber-50 border-amber-200 hover:bg-amber-100/70', iconBg: 'bg-amber-500 text-white', numColor: 'text-amber-900' },
+        { id: 'events', title: '大事紀要', count: appData.events.length, unit: '筆', icon: 'calendar-days', tileBg: 'bg-blue-50 border-blue-200 hover:bg-blue-100/70', iconBg: 'bg-blue-600 text-white', numColor: 'text-blue-900' },
+        { id: 'residents', title: '住戶清冊', count: appData.residents.length, unit: '戶', icon: 'users', tileBg: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70', iconBg: 'bg-emerald-600 text-white', numColor: 'text-emerald-900' },
+        { id: 'announcements', title: '公告製作', count: appData.announcements.length, unit: '則', icon: 'file-text', tileBg: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100/70', iconBg: 'bg-indigo-600 text-white', numColor: 'text-indigo-900' },
+        { id: 'regulations', title: '社區規範', count: appData.regulations.length, unit: '份', icon: 'book-open', tileBg: 'bg-teal-50 border-teal-200 hover:bg-teal-100/70', iconBg: 'bg-teal-600 text-white', numColor: 'text-teal-900' },
+        { id: 'legal', title: '存證信函', count: appData.legalLetters.length, unit: '件', icon: 'scale', tileBg: 'bg-rose-50 border-rose-200 hover:bg-rose-100/70', iconBg: 'bg-rose-600 text-white', numColor: 'text-rose-900' },
+        { id: 'housing', title: '售屋出租', count: appData.housing.length, unit: '戶', icon: 'home', tileBg: 'bg-violet-50 border-violet-200 hover:bg-violet-100/70', iconBg: 'bg-violet-600 text-white', numColor: 'text-violet-900' },
+        { id: 'parking', title: '車位租賃', count: appData.parking.length, unit: '件', icon: 'car', tileBg: 'bg-sky-50 border-sky-200 hover:bg-sky-100/70', iconBg: 'bg-sky-600 text-white', numColor: 'text-sky-900' },
+        { id: 'operations', title: '裝潢/廠商', count: appData.renovations.length + appData.vendors.length, unit: '項', icon: 'shield-check', tileBg: 'bg-orange-50 border-orange-200 hover:bg-orange-100/70', iconBg: 'bg-orange-500 text-white', numColor: 'text-orange-900' }
       ];
 
       let savedOrder = appData.meta.cardOrder || JSON.parse(localStorage.getItem('pm_card_order') || '[]');
@@ -1458,30 +1459,39 @@
         return idxA - idxB;
       });
 
+      // 渲染集中排列的彩色方塊總覽卡片
       document.getElementById('module-cards-grid').innerHTML = cards.map((c, index) => `
-        <div onclick="switchTab('${c.id}')" class="paper-card p-4 cursor-pointer flex flex-col justify-between relative">
-          <div class="flex items-center justify-between mb-3">
-            <div class="w-9 h-9 rounded-lg ${c.color} flex items-center justify-center"><i data-lucide="${c.icon}" class="w-5 h-5"></i></div>
-            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-              <button onclick="moveModuleCard('${c.id}', -1)" ${index === 0 ? 'disabled' : ''} title="往上移動" class="w-6 h-6 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold">↑</button>
-              <button onclick="moveModuleCard('${c.id}', 1)" ${index === cards.length - 1 ? 'disabled' : ''} title="往下移動" class="w-6 h-6 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 text-xs font-bold">↓</button>
-              <span class="text-xs font-medium px-2 py-1 rounded bg-slate-100 text-slate-700 ml-0.5">${c.title}</span>
+        <div onclick="switchTab('${c.id}')" class="${c.tileBg} border rounded-xl p-3 cursor-pointer transition shadow-2xs flex flex-col justify-between relative active:scale-95">
+          <div class="flex items-center justify-between gap-1.5 mb-2">
+            <div class="w-8 h-8 rounded-lg ${c.iconBg} flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="${c.icon}" class="w-4 h-4"></i>
             </div>
+            ${isSortMode ? `
+              <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                <button onclick="moveModuleCard('${c.id}', -1)" ${index === 0 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center rounded bg-white border border-slate-300 text-slate-700 disabled:opacity-30 text-xs font-bold">←</button>
+                <button onclick="moveModuleCard('${c.id}', 1)" ${index === cards.length - 1 ? 'disabled' : ''} class="w-6 h-6 flex items-center justify-center rounded bg-white border border-slate-300 text-slate-700 disabled:opacity-30 text-xs font-bold">→</button>
+              </div>
+            ` : `
+              <div class="flex items-baseline gap-0.5">
+                <span class="text-xl font-extrabold ${c.numColor}">${c.count}</span>
+                <span class="text-[11px] text-slate-500 font-medium">${c.unit}</span>
+              </div>
+            `}
           </div>
-          <div>
-            <div class="flex items-baseline gap-1"><span class="text-2xl font-bold text-slate-800">${c.count}</span><span class="text-xs text-slate-500">${c.unit}</span></div>
-            <div class="flex items-center justify-between mt-1"><p class="text-xs text-slate-500 truncate">${c.desc}</p><i data-lucide="arrow-right" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i></div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 truncate">${c.title}</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
           </div>
         </div>
       `).join('');
 
       document.getElementById('dash-recent-events').innerHTML = appData.events.slice(0, 5).map(e => `
         <div class="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0">
-          <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">${e.date}</span>
-          <span class="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">${e.type}</span>
-          <span class="text-slate-800">${e.content}</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">${e.date}</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 shrink-0">${e.type}</span>
+          <span class="text-slate-800 truncate">${e.content}</span>
         </div>
-      `).join('') || '<p class="text-slate-400 text-xs py-4 text-center">尚無排定紀要事項</p>';
+      `).join('') || '<p class="text-slate-400 text-xs py-3 text-center">尚無排定紀要事項</p>';
 
       document.getElementById('regulations-list').innerHTML = appData.regulations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between">
