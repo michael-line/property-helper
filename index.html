@@ -934,15 +934,18 @@
       updateSyncUI('synced', '已建立雲端資料庫');
     }
 
-    async function syncToCloud() {
+   async function syncToCloud() {
+      // 🛡️ 雲端防覆蓋保護網：若本機資料完全為空，絕對禁止覆蓋雲端
+      if (!appData || (!appData.logs && !appData.residents && !appData.houses)) {
+        console.warn("⚠️ 偵測到本機資料結構異常為空，為保護雲端歷史資料，已攔截此次同步！");
+        return false;
+      }
       try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) {}
       renderAll();
-
       if (!accessToken || !driveFileId) {
         updateSyncUI('error', '未連結雲端（資料僅暫存本機）');
         return false;
       }
-
       updateSyncUI('syncing', '正在同步至 Google 雲端...');
       try {
         const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
