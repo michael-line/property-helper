@@ -1349,6 +1349,7 @@
       }
     }
 // 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式）
+    // 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式）
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
       const targetArea = document.getElementById('daily-report-capture-area');
@@ -1358,7 +1359,7 @@
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
-      // 2. 🎯 關鍵救星：在截圖前，將目標區塊強制鎖定為固定的直式報表寬度（例如 650px），防止桌機寬螢幕把畫面拉扁
+      // 2. 🎯 關鍵救星：在截圖前，將目標區塊強制鎖定為固定的直式報表寬度（650px），防止桌機寬螢幕把畫面拉扁
       const originalWidth = targetArea.style.width;
       const originalMaxWidth = targetArea.style.maxWidth;
       const originalMargin = targetArea.style.margin;
@@ -1396,6 +1397,7 @@
             </div>
             
             <div class="flex-1 overflow-auto bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-center">
+              <!-- 🎯 確保彈窗預覽維持完美比例，絕不被壓扁 -->
               <img src="${imgDataUrl}" style="max-height: 65vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300 block mx-auto">
             </div>
 
