@@ -1527,6 +1527,7 @@
     }
 
     // 🎯 確保預覽彈窗必定正常跳出之高清匯出函式
+    // 🎯 完美修復截圖破圖問題的高清匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
@@ -1536,14 +1537,17 @@
         return;
       }
 
+      // 暫時隱藏不希望拍進去的按鈕
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
+        // 使用 allowTaint 與 useCORS 確保圖片順利渲染不破圖
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
           useCORS: true,
+          allowTaint: true,
           windowWidth: 750
         });
         
@@ -1555,7 +1559,6 @@
           modal.id = 'report-preview-modal';
           document.body.appendChild(modal);
         }
-        // 強制設定置頂與滿版樣式，絕不被遮擋
         modal.className = 'fixed inset-0 bg-slate-900/80 z-[99999] flex items-center justify-center p-3 no-print';
 
         modal.innerHTML = `
@@ -1572,7 +1575,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 支援多頁自動排版與比例維持，確認無誤後請點擊下載。</span>
+              <span class="text-slate-500">💡 預覽圖已順利生成，確認無誤後請點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}_${Date.now().toString().slice(-4)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
