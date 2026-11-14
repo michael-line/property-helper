@@ -1348,34 +1348,27 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-
-   async function exportDailyReportImage() {
-      const quickDateEl = document.getElementById('ql-filter-date');
+// 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式）
+    async function exportDailyReportImage() {
+      const quickDateEl = document.getElementById('ql-filter-date') || document.getElementById('dl-print-date');
       const filterDate = quickDateEl?.value || new Date().toISOString().split('T')[0];
       const targetArea = document.getElementById('daily-report-capture-area');
-      if (!targetArea) return;
-
-      // 1. 自動同步備份一份至「日誌列印」卡片模組內，並立即強制重新渲染
-      const printDateInput = document.getElementById('dl-print-date');
-      if (printDateInput) {
-        printDateInput.value = filterDate;
-      }
-      if (typeof window.renderDailyLogPrintView === 'function') {
-        window.renderDailyLogPrintView();
-      } else if (typeof renderDailyLogPrintView === 'function') {
-        renderDailyLogPrintView();
+      if (!targetArea) {
+        alert('找不到呈報預覽區域');
+        return;
       }
 
-      // 2. 隱藏不需要被拍進圖裡的按鈕
+      // 隱藏不需要被拍進圖裡的按鈕
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        // 3. 即時動態產生畫布圖片預覽
+        // 使用 scale: 2 確保畫質清晰，並設定白底以完美支援 JPG 格式
         const canvas = await html2canvas(targetArea, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const imgDataUrl = canvas.toDataURL('image/png');
+        
+        // 🎯 改為輸出為 jpg 格式，徹底解決透明通道或比例變形問題
+        const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 4. 建立預覽彈窗，並限制最大高度與使用 object-contain 確保網頁版圖片不變形
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1388,21 +1381,21 @@
           <div class="bg-white rounded-2xl max-w-2xl w-full p-4 shadow-2xl flex flex-col max-h-[90vh] space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                📷 ${filterDate} 工作日誌呈報圖片即時預覽
+                📷 ${filterDate} 工作日誌呈報圖片預覽 (JPG 格式)
               </h3>
               <button onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1">✕ 關閉</button>
             </div>
             
-           <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
-  <img src="${imgDataUrl}" style="max-height: 70vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300">
-</div>
+            <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
+              <img src="${imgDataUrl}" style="max-height: 70vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300">
+            </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 已同步至【日誌列印】卡片內。請確認預覽無誤後點擊下載。</span>
+              <span class="text-slate-500">💡 確認預覽比例正常後，即可點擊下方按鈕下載圖片。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
-                  確認無誤，正式下載圖片
+                  確認無誤，下載 JPG 圖片
                 </button>
               </div>
             </div>
@@ -1412,16 +1405,20 @@
 
       } catch (err) {
         console.error(err);
-        alert('產生呈報圖片預覽失敗，請稍後再試');
+        alert('產生圖片失敗，請稍後再試');
       } finally {
         hiddenEls.forEach(el => el.style.display = '');
       }
     }
 
-    // 確認下載呈報圖片
+    // 日誌列印卡片的按鈕直接呼叫同一個完美的匯出邏輯
+    function exportDailyLogPrintImage() {
+      exportDailyReportImage();
+    }
+
     function confirmDownloadReport(imgDataUrl, filterDate) {
       const link = document.createElement('a');
-      link.download = `工作日誌呈報_${filterDate}.png`;
+      link.download = `工作日誌呈報_${filterDate}.jpg`;
       link.href = imgDataUrl;
       link.click();
 
