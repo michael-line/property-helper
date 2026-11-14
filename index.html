@@ -1434,20 +1434,16 @@
       const container = document.getElementById('dl-print-list');
       if (!container) return;
 
-      // 根據手動設定決定字體與相片樣式
       let fontSizeClass = 'text-sm';
       let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
-      let maxImgHeight = '120px';
 
       if (currentFontSize === 'small') fontSizeClass = 'text-xs';
       if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
 
       if (currentPhotoSize === 'small') {
         photoGridClass = 'grid-cols-4 sm:grid-cols-6';
-        maxImgHeight = '90px';
       } else if (currentPhotoSize === 'large') {
-        photoGridClass = 'grid-cols-2 sm:grid-cols-3';
-        maxImgHeight = '180px';
+        photoGridClass = 'grid-cols-1 sm:grid-cols-2';
       }
 
       let pagesHtml = '';
@@ -1481,7 +1477,7 @@
                 <div class="grid ${photoGridClass} gap-2 items-start">
                   ${allPhotosToday.map(p => `
                     <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
-                      <img src="${p.src}" style="max-height: ${maxImgHeight}; width: auto; height: auto; object-fit: contain;" class="rounded block mx-auto">
+                      <img src="${p.src}" style="width: 100%; height: auto; object-fit: contain;" class="rounded block mx-auto">
                       <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
                     </div>
                   `).join('')}
@@ -1494,8 +1490,7 @@
 
       container.innerHTML = pagesHtml;
     }
-
-    // 🎯 支援多頁與手動調整的高清匯出函式
+   // 🎯 支援多頁與手動調整的高清匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
@@ -1574,94 +1569,7 @@
       exportDailyReportImage();
     }
 
-   // 🎯 確保日誌列印畫面完整展開該日期的「所有筆數」與自動換行防溢出
-    function renderDailyLogPrintView() {
-      const quickDateEl = document.getElementById('ql-filter-date');
-      const printDateInput = document.getElementById('dl-print-date');
-      
-      let filterDate = printDateInput?.value || quickDateEl?.value || '';
-      if (printDateInput && !printDateInput.value && quickDateEl) {
-        printDateInput.value = quickDateEl.value;
-        filterDate = quickDateEl.value;
-      }
-
-      const comm = appData.meta.communityName || '最上境大廈管委會';
-      const titleEl = document.getElementById('dl-print-title');
-      const subEl = document.getElementById('dl-print-subtitle');
-      if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
-      if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
-      
-      const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
-      
-      const badge = document.getElementById('dailylog-total-badge');
-      if (badge) badge.innerText = `共 ${list.length} 筆`;
-
-      const statusLabelMap = { 
-        red: '🔴 紅色 (緊急/重要)', 
-        blue: '🔵 藍色 (行政/公告)', 
-        green: '🟢 綠色 (維保/完成)', 
-        purple: '🟣 紫色 (建議/規劃)', 
-        default: '⚫ 一般紀錄' 
-      };
-
-      let photoGlobalIndex = 1;
-      const allPhotosToday = [];
-
-      const processedList = list.map(item => {
-        let itemPhotoTags = '';
-        if (Array.isArray(item.photos) && item.photos.length > 0) {
-          const startIdx = photoGlobalIndex;
-          const endIdx = photoGlobalIndex + item.photos.length - 1;
-          itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
-          
-          item.photos.forEach(src => {
-            allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
-            photoGlobalIndex++;
-          });
-        }
-        return { ...item, itemPhotoTags };
-      });
-
-      const container = document.getElementById('dl-print-list');
-      if (!container) return;
-
-      // 🎯 加上 word-break: break-all 與 overflow-wrap: break-word 確保手機版絕對不超出格子
-      container.innerHTML = `
-        <div class="space-y-4" style="word-break: break-all; overflow-wrap: break-word;">
-          <div class="divide-y divide-slate-200">
-            ${processedList.map(item => `
-              <div class="py-2.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
-                <div class="text-sm leading-relaxed" style="word-break: break-all; overflow-wrap: break-word; max-width: 100%;">
-                  ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
-                  <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium shrink-0">${statusLabelMap[item.color] || statusLabelMap.default}</span>
-                  <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
-                  <span class="text-xs font-bold text-cyan-700 ml-1 shrink-0">${item.itemPhotoTags}</span>
-                </div>
-              </div>
-            `).join('') || '<p class="text-xs text-slate-400 py-8 text-center">此日期尚無工作日誌紀錄</p>'}
-          </div>
-
-          ${allPhotosToday.length > 0 ? `
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-4">
-              <p class="text-xs font-bold text-slate-700">📷 ${filterDate} 現場圖片呈報總覽 (${allPhotosToday.length}張)</p>
-              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 items-start">
-                ${allPhotosToday.map(p => `
-                  <div class="relative bg-white p-1 rounded-lg border border-slate-200">
-                    <img src="${p.src}" style="max-height: 120px; width: auto; height: auto; object-fit: contain;" class="w-full bg-slate-50 rounded block">
-                    <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1 py-0.5 rounded font-mono">${p.label}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    function exportDailyLogPrintImage() {
-      exportDailyReportImage();
-    }
-    // ================= 5. 大事紀要（匯出保持相片原比例不變形） =================
+    // ================= 5. 大事紀要 =================
     function setEventColorFilter(color) {
       currentColorFilter = color;
       ['all', 'red', 'blue', 'green', 'purple'].forEach(c => {
@@ -1699,7 +1607,6 @@
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⭐' };
       const colorMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
 
-      // 圖片採用 w-full h-auto block 保持原始比例，避免匯出呈報圖片時被壓扁或拉伸
       document.getElementById('events-list').innerHTML = filtered.map(e => `
         <div class="py-3 space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -1727,7 +1634,7 @@
       captureAndDownloadImage('events-capture-area', `大事紀要彙整_${s}_${e}.png`);
     }
 
-    // ================= 6. 公告園地（高解析度傳圖 + Gemini 視覺 OCR 文字提取解析） =================
+    // ================= 6. 公告園地 =================
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -1743,7 +1650,6 @@
       btn.innerHTML = '⏳ AI 正在辨識提取公告文字...';
 
       try {
-        // 使用較高解析度 (1200px) 確保公告小字清晰可辨識
         const photoB64 = await compressImageToBase64(file, 1200, 0.82);
         let aiSummary = '（尚未設定 Gemini API Key，僅保存圖檔與標題）';
 
@@ -1834,7 +1740,6 @@
       `).join('') || '<p class="text-xs text-slate-400 col-span-2 text-center py-8">尚無公告圖檔紀錄，請由上方選擇圖檔並點選 AI 分析記錄</p>';
       lucide.createIcons();
     }
-
     // ================= 7. 社區規範、函文圖資、住戶、售屋、報修、裝潢廠商 =================
     async function uploadRegulation() {
       const title = document.getElementById('reg-title').value.trim();
@@ -2324,8 +2229,5 @@
       };
       reader.readAsText(file);
     }
-
-  </script>
-  
-</body>
-</html>
+    
+    
