@@ -1348,17 +1348,17 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 A4 直式強制保證版：建立獨立直式虛擬畫布，絕不變形、秒開預覽
+// 🎯 智慧排版升級版：自動最佳化字體大小、現場圖片排版，解決手機超出格子問題
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      const sourceArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
+      const sourceArea = document.getElementById('daily-report-capture-area') || document.getElementById('dailylog-print-area');
       if (!sourceArea) {
         alert('找不到呈報內容區域');
         return;
       }
 
-      // 1. 複製當前內容並強制在畫面外建立一個絕對直式的標準 A4 容器（寬度固定 750px）
+      // 1. 複製當前內容並建立標準 A4 直式容器（固定寬度 750px）
       const cloneArea = sourceArea.cloneNode(true);
       cloneArea.style.position = 'fixed';
       cloneArea.style.left = '-9999px';
@@ -1366,26 +1366,54 @@
       cloneArea.style.width = '750px';
       cloneArea.style.maxWidth = '750px';
       cloneArea.style.backgroundColor = '#ffffff';
-      cloneArea.style.padding = '24px';
+      cloneArea.style.padding = '32px'; // 加大留白，讓版面不空虛
       cloneArea.style.boxSizing = 'border-box';
       cloneArea.style.zIndex = '-999';
 
       // 移除不需要被拍進圖裡的按鈕
       cloneArea.querySelectorAll('.no-export').forEach(el => el.remove());
 
-      // 確保內部圖片維持極佳比例
+      // 2. 智慧調整字體與排版（針對內容較少時自動放大、閱讀更舒適、絕不超出格子）
+      cloneArea.querySelectorAll('*').forEach(el => {
+        el.style.wordBreak = 'break-all';
+        el.style.overflowWrap = 'break-word';
+      });
+
+      // 放大文字標題與內文，解決閱讀吃力問題
+      cloneArea.querySelectorAll('h3, h4').forEach(h => {
+        h.style.fontSize = '20px';
+        h.style.lineHeight = '1.4';
+      });
+
+      cloneArea.querySelectorAll('.text-sm, p, span').forEach(txt => {
+        if (!txt.classList.contains('font-mono') && !txt.classList.contains('text-xs')) {
+          txt.style.fontSize = '16px'; // 舒適的閱讀字體
+          txt.style.lineHeight = '1.6';
+        }
+      });
+
+      // 3. 最佳化現場圖片大小與格狀排列
+      const imgContainer = cloneArea.querySelector('.grid');
+      if (imgContainer) {
+        imgContainer.style.display = 'grid';
+        imgContainer.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))'; // 改為整齊的雙欄大圖排版
+        imgContainer.style.gap = '12px';
+      }
+
       cloneArea.querySelectorAll('img').forEach(img => {
-        img.style.maxHeight = '200px';
-        img.style.width = 'auto';
+        img.style.maxHeight = '280px'; // 放大圖片，避免內容少時顯得空虛
+        img.style.width = '100%';
         img.style.height = 'auto';
         img.style.objectFit = 'contain';
-        img.style.margin = '0 auto';
+        img.style.borderRadius = '8px';
+        img.style.background = '#f8fafc';
+        img.style.border = '1px solid #e2e8f0';
       });
 
       document.body.appendChild(cloneArea);
 
       try {
-        // 2. 針對這個 750px 直式容器進行高畫質截圖
+        // 4. 進行高畫質截圖
         const canvas = await html2canvas(cloneArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
@@ -1395,7 +1423,7 @@
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 3. 建立預覽彈窗
+        // 5. 建立高畫質預覽彈窗
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1408,7 +1436,7 @@
           <div class="bg-white rounded-2xl max-w-xl w-full p-4 shadow-2xl flex flex-col max-h-[92vh] space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                📷 工作日誌呈報圖片預覽 (${filterDate}) - A4直式
+                📷 工作日誌呈報圖片預覽 (${filterDate}) - A4直式高清
               </h3>
               <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 text-sm">✕ 關閉</button>
             </div>
@@ -1418,7 +1446,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 已強制鎖定為標準 A4 直式比例，確認無誤後請點擊下載。</span>
+              <span class="text-slate-500">💡 字體與圖片已自動優化放大，確認無誤後請點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}_${Date.now().toString().slice(-4)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1434,7 +1462,6 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        // 4. 清除暫存的虛擬 DOM
         document.body.removeChild(cloneArea);
       }
     }
@@ -1450,7 +1477,7 @@
       if (modal) modal.remove();
     }
 
-    // 🎯 確保日誌列印檢視能完整展開該日期的「所有筆數」與全部現場圖
+   // 🎯 確保日誌列印畫面完整展開該日期的「所有筆數」與自動換行防溢出
     function renderDailyLogPrintView() {
       const quickDateEl = document.getElementById('ql-filter-date');
       const printDateInput = document.getElementById('dl-print-date');
@@ -1467,10 +1494,8 @@
       if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
       if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
       
-      // 完整抓取該日期的所有工作日誌與排程清單
       const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
       
-      // 更新右上角總筆數統計標籤
       const badge = document.getElementById('dailylog-total-badge');
       if (badge) badge.innerText = `共 ${list.length} 筆`;
 
@@ -1503,16 +1528,17 @@
       const container = document.getElementById('dl-print-list');
       if (!container) return;
 
+      // 🎯 加上 word-break: break-all 與 overflow-wrap: break-word 確保手機版絕對不超出格子
       container.innerHTML = `
-        <div class="space-y-4">
+        <div class="space-y-4" style="word-break: break-all; overflow-wrap: break-word;">
           <div class="divide-y divide-slate-200">
             ${processedList.map(item => `
               <div class="py-2.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
-                <div class="text-sm leading-relaxed">
+                <div class="text-sm leading-relaxed" style="word-break: break-all; overflow-wrap: break-word; max-width: 100%;">
                   ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
-                  <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
+                  <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium shrink-0">${statusLabelMap[item.color] || statusLabelMap.default}</span>
                   <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
-                  <span class="text-xs font-bold text-cyan-700 ml-1">${item.itemPhotoTags}</span>
+                  <span class="text-xs font-bold text-cyan-700 ml-1 shrink-0">${item.itemPhotoTags}</span>
                 </div>
               </div>
             `).join('') || '<p class="text-xs text-slate-400 py-8 text-center">此日期尚無工作日誌紀錄</p>'}
