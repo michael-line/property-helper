@@ -1348,23 +1348,45 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 完整修正版：絕對 A4 直式、高畫質、秒開預覽
+// 🎯 A4 直式強制保證版：建立獨立直式虛擬畫布，絕不變形、秒開預覽
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      const targetArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
-      if (!targetArea) {
+      const sourceArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
+      if (!sourceArea) {
         alert('找不到呈報內容區域');
         return;
       }
 
-      // 1. 隱藏不需要被拍進圖裡的按鈕
-      const hiddenEls = targetArea.querySelectorAll('.no-export');
-      hiddenEls.forEach(el => el.style.display = 'none');
+      // 1. 複製當前內容並強制在畫面外建立一個絕對直式的標準 A4 容器（寬度固定 750px）
+      const cloneArea = sourceArea.cloneNode(true);
+      cloneArea.style.position = 'fixed';
+      cloneArea.style.left = '-9999px';
+      cloneArea.style.top = '0';
+      cloneArea.style.width = '750px';
+      cloneArea.style.maxWidth = '750px';
+      cloneArea.style.backgroundColor = '#ffffff';
+      cloneArea.style.padding = '24px';
+      cloneArea.style.boxSizing = 'border-box';
+      cloneArea.style.zIndex = '-999';
+
+      // 移除不需要被拍進圖裡的按鈕
+      cloneArea.querySelectorAll('.no-export').forEach(el => el.remove());
+
+      // 確保內部圖片維持極佳比例
+      cloneArea.querySelectorAll('img').forEach(img => {
+        img.style.maxHeight = '200px';
+        img.style.width = 'auto';
+        img.style.height = 'auto';
+        img.style.objectFit = 'contain';
+        img.style.margin = '0 auto';
+      });
+
+      document.body.appendChild(cloneArea);
 
       try {
-        // 2. 高畫質渲染 (scale: 2 確保極致清晰，windowWidth: 750 鎖定標準 A4 直式比例)
-        const canvas = await html2canvas(targetArea, { 
+        // 2. 針對這個 750px 直式容器進行高畫質截圖
+        const canvas = await html2canvas(cloneArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
           useCORS: true,
@@ -1373,7 +1395,7 @@
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 3. 建立高畫質預覽彈窗
+        // 3. 建立預覽彈窗
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1386,7 +1408,7 @@
           <div class="bg-white rounded-2xl max-w-xl w-full p-4 shadow-2xl flex flex-col max-h-[92vh] space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                📷 工作日誌呈報圖片預覽 (${filterDate})
+                📷 工作日誌呈報圖片預覽 (${filterDate}) - A4直式
               </h3>
               <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 text-sm">✕ 關閉</button>
             </div>
@@ -1396,7 +1418,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 比例已強制鎖定為 A4 直式高清，確認無誤後請點擊下載。</span>
+              <span class="text-slate-500">💡 已強制鎖定為標準 A4 直式比例，確認無誤後請點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}_${Date.now().toString().slice(-4)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1412,11 +1434,12 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        hiddenEls.forEach(el => el.style.display = '');
+        // 4. 清除暫存的虛擬 DOM
+        document.body.removeChild(cloneArea);
       }
     }
 
-    // 確認下載函式（自動加上時間尾綴，確保一天匯出多檔不會互相覆蓋）
+    // 確認下載函式
     function confirmDownloadReport(imgDataUrl, fileSuffix) {
       const link = document.createElement('a');
       link.download = `工作日誌呈報_${fileSuffix}.jpg`;
