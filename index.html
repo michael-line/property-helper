@@ -1348,18 +1348,17 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式）
-    // 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式）
+// 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式，並保護相片比例）
     async function exportDailyReportImage() {
-      const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
-      const targetArea = document.getElementById('daily-report-capture-area');
+      const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
+      const targetArea = document.getElementById('daily-report-capture-area') || document.getElementById('dailylog-print-area');
       if (!targetArea) return;
 
       // 1. 隱藏不需要被拍進圖裡的按鈕
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
-      // 2. 🎯 關鍵救星：在截圖前，將目標區塊強制鎖定為固定的直式報表寬度（650px），防止桌機寬螢幕把畫面拉扁
+      // 2. 在截圖前，將目標區塊強制鎖定為固定的直式報表寬度（650px），防止桌機寬螢幕拉扁
       const originalWidth = targetArea.style.width;
       const originalMaxWidth = targetArea.style.maxWidth;
       const originalMargin = targetArea.style.margin;
@@ -1374,7 +1373,7 @@
           scale: 2, 
           backgroundColor: '#ffffff', 
           useCORS: true,
-          windowWidth: 650 // 強制以 650px 視窗寬度渲染，確保排版完美不變形
+          windowWidth: 650
         });
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
@@ -1397,7 +1396,7 @@
             </div>
             
             <div class="flex-1 overflow-auto bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-center">
-              <!-- 🎯 確保彈窗預覽維持完美比例，絕不被壓扁 -->
+              <!-- 確保彈窗預覽維持完美比例，絕不破圖或變形 -->
               <img src="${imgDataUrl}" style="max-height: 65vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300 block mx-auto">
             </div>
 
@@ -1418,7 +1417,7 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        // 4. 無論成功或失敗，立刻把畫面的原始寬度還原
+        // 4. 還原畫面的原始寬度
         targetArea.style.width = originalWidth;
         targetArea.style.maxWidth = originalMaxWidth;
         targetArea.style.margin = originalMargin;
