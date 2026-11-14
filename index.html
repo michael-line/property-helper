@@ -1350,11 +1350,12 @@
     }
 
    async function exportDailyReportImage() {
-      const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
+      const quickDateEl = document.getElementById('ql-filter-date');
+      const filterDate = quickDateEl?.value || new Date().toISOString().split('T')[0];
       const targetArea = document.getElementById('daily-report-capture-area');
       if (!targetArea) return;
 
-      // 🎯 強制將日期同步給日誌列印模組的日期輸入框，並安全觸發重新渲染
+      // 1. 自動同步備份一份至「日誌列印」卡片模組內，並立即強制重新渲染
       const printDateInput = document.getElementById('dl-print-date');
       if (printDateInput) {
         printDateInput.value = filterDate;
@@ -1374,7 +1375,7 @@
         const canvas = await html2canvas(targetArea, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         const imgDataUrl = canvas.toDataURL('image/png');
 
-        // 4. 建立預覽彈窗，直接秀出即將產生的整張圖片
+        // 4. 建立預覽彈窗，並限制最大高度與使用 object-contain 確保網頁版圖片不變形
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1393,8 +1394,8 @@
             </div>
             
             <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
-  <img src="${imgDataUrl}" class="max-w-full max-h-[70vh] w-auto object-contain rounded shadow-sm border border-slate-300">
-</div>
+              <img src="${imgDataUrl}" class="max-w-full max-h-[70vh] w-auto object-contain rounded shadow-sm border border-slate-300">
+            </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
               <span class="text-slate-500">💡 已同步至【日誌列印】卡片內。請確認預覽無誤後點擊下載。</span>
