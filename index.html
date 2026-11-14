@@ -1192,6 +1192,14 @@
       });
 
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
+      // 狀態標記完整名稱對應
+      const statusLabelMap = { 
+        red: '🔴 紅色 (緊急/重要)', 
+        blue: '🔵 藍色 (行政/公告)', 
+        green: '🟢 綠色 (維保/完成)', 
+        purple: '🟣 紫色 (建議/規劃)', 
+        default: '⚫ 一般紀錄' 
+      };
       const textMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
@@ -1220,9 +1228,20 @@
           return { ...item, itemPhotoTags };
         });
 
+        // 同步自動備份一份到日誌列印卡片中
+        if (typeof renderDailyLogPrintView === 'function') {
+          setTimeout(() => {
+            const printDateInput = document.getElementById('dl-print-date');
+            if (printDateInput) {
+              printDateInput.value = filterDate;
+              renderDailyLogPrintView();
+            }
+          }, 100);
+        }
+
         container.innerHTML = `
           <div class="space-y-3">
-            <!-- 狀態標記移到上方以便對照 -->
+            <!-- 狀態標記置於上方對照 -->
             <div class="px-2 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-between">
               <span>📅 ${filterDate} 當日工作清單與呈報對照</span>
               <span class="text-[11px] text-cyan-700 font-mono">共 ${list.length} 筆日誌 / ${allPhotosToday.length} 張現場圖</span>
@@ -1234,7 +1253,8 @@
                   <div class="text-sm leading-relaxed">
                     <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
                     ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
-                    <span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
+                    <!-- 隱藏類別，改為顯示狀態標記內容 -->
+                    <span class="text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
                     <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
                     <span class="text-xs font-bold text-cyan-700 ml-1">${item.itemPhotoTags}</span>
                   </div>
@@ -1250,16 +1270,19 @@
               `).join('')}
             </div>
 
-            <!-- 當日現場圖片 A4 呈報緊湊預覽（同步對應日誌列印與匯出） -->
+            <!-- 當日現場圖片 A4 呈報緊湊預覽（圖片維持原比例 object-contain，不變形） -->
             ${allPhotosToday.length > 0 ? `
               <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> ${filterDate} 當日現場圖片 A4 呈報緊湊預覽 (${allPhotosToday.length}張)
-                </p>
+                <div class="flex items-center justify-between">
+                  <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> ${filterDate} 當日現場圖片呈報預覽 (${allPhotosToday.length}張)
+                  </p>
+                  <button type="button" onclick="alert('已進入呈報預覽模式，確認無誤後即可點擊上方【匯出呈報圖片】下載！')" class="text-[11px] bg-cyan-600 text-white px-2 py-0.5 rounded hover:bg-cyan-700">預覽確認中</button>
+                </div>
                 <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 items-start">
                   ${allPhotosToday.map(p => `
                     <div class="relative bg-white p-1 rounded-lg border border-slate-200 shadow-2xs">
-                      <img src="${p.src}" class="w-full h-24 sm:h-28 object-cover rounded block cursor-zoom-in" onclick="window.open('${p.src}')" title="點擊放大檢視原圖">
+                      <img src="${p.src}" class="w-full h-24 sm:h-28 object-contain bg-slate-50 rounded block cursor-zoom-in" onclick="window.open('${p.src}')" title="點擊放大檢視原圖">
                       <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1 py-0.5 rounded font-mono">${p.label}</span>
                     </div>
                   `).join('')}
@@ -1278,7 +1301,7 @@
                   <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
                   ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
                   <span class="text-xs font-mono text-slate-400 mr-1.5">${item.date}</span>
-                  <span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
+                  <span class="text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
                   <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0 no-export">
@@ -1294,7 +1317,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   ${item.photos.map((src, idx) => `
                     <div class="relative bg-white p-1 rounded-lg border border-slate-200">
-                      <img src="${src}" class="w-full h-auto max-h-32 object-contain rounded cursor-zoom-in" onclick="window.open('${src}')">
+                      <img src="${src}" class="w-full h-auto max-h-32 object-contain bg-slate-50 rounded cursor-zoom-in" onclick="window.open('${src}')">
                       <span class="absolute bottom-1 right-1 bg-slate-900/70 text-white text-[9px] px-1 rounded">圖 ${idx + 1}</span>
                     </div>
                   `).join('')}
