@@ -1526,13 +1526,10 @@
       container.innerHTML = pagesHtml;
     }
 
-    // 🎯 確保預覽彈窗必定正常跳出之高清匯出函式
-    // 🎯 完美修復截圖破圖問題的高清匯出函式
-    // 🎯 智慧容錯與自動重試的高清預覽與匯出函式
+    // 🎯 圖片完整轉 Base64 避開 CORS 阻擋的高清預覽與匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      // 自動尋找有資料的列印或呈報區域
       let targetArea = document.getElementById('dailylog-print-area');
       if (!targetArea || targetArea.innerText.trim().length < 5) {
         targetArea = document.getElementById('daily-report-capture-area');
@@ -1543,12 +1540,32 @@
         return;
       }
 
-      // 暫時隱藏不希望拍進去的按鈕與控制列
+      // 1. 將畫面上所有 img 的外部連結轉為 Base64，確保 html2canvas 絕對不破圖
+      const imgEls = targetArea.querySelectorAll('img');
+      const originalSrcs = [];
+      
+      for (let img of imgEls) {
+        originalSrcs.push({ img, src: img.src });
+        if (img.src && !img.src.startsWith('data:')) {
+          try {
+            const res = await fetch(img.src, { mode: 'cors' });
+            const blob = await res.blob();
+            const b64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+            img.src = b64;
+          } catch (e) {
+            console.warn('圖片轉 Base64 略過:', e);
+          }
+        }
+      }
+
       const hiddenEls = targetArea.querySelectorAll('.no-export, .no-print');
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        // 賦予明確寬度確保截圖不變形
         const originalWidth = targetArea.style.width;
         targetArea.style.width = '750px';
 
@@ -1561,6 +1578,10 @@
         });
         
         targetArea.style.width = originalWidth;
+        
+        // 還原原本的 img src
+        originalSrcs.forEach(item => { item.img.src = item.src; });
+
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
         let modal = document.getElementById('report-preview-modal');
@@ -1600,6 +1621,7 @@
       } catch (err) {
         console.error(err);
         alert('產生呈報圖片失敗，請檢查主控台錯誤訊息');
+        originalSrcs.forEach(item => { item.img.src = item.src; });
       } finally {
         hiddenEls.forEach(el => el.style.display = '');
       }
