@@ -1194,53 +1194,51 @@
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
 
-      // 圖片採用 w-full h-auto block 維持與相片 100% 同比例，匯出呈報圖片不變形
-      container.innerHTML = list.map(item => `
-        <div class="py-2.5 space-y-2">
-          <div class="flex items-start justify-between gap-2">
-            <div class="text-sm leading-relaxed">
-              <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
-              ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
-              ${!filterDate ? `<span class="text-xs font-mono text-slate-400 mr-1.5">${item.date}</span>` : ''}
-              <span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
-              <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
+      container.innerHTML = list.map(item => {
+        const hasPhotos = Array.isArray(item.photos) && item.photos.length > 0;
+        // 如果有上傳相片，在文字後方自動產生圖號標示（例如：圖1、圖2...）
+        const photoBadges = hasPhotos 
+          ? `<span class="inline-flex gap-1 ml-1.5 align-middle">${item.photos.map((_, pIdx) => `<span class="text-[11px] bg-cyan-50 text-cyan-700 border border-cyan-200 px-1.5 py-0.2 rounded font-mono font-bold">圖${pIdx + 1}</span>`).join('')}</span>` 
+          : '';
+
+        return `
+          <div class="py-3 space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="text-sm leading-relaxed flex-1">
+                <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
+                ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
+                ${!filterDate ? `<span class="text-xs font-mono text-slate-400 mr-1.5">${item.date}</span>` : ''}
+                <span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
+                <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
+                ${photoBadges}
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0 no-export">
+                <button type="button" onclick="editQuickLogItem(${item.id})" class="text-slate-400 hover:text-blue-600 p-1" title="編輯修改">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button type="button" onclick="deleteWorkLogAndSync(${item.id})" class="text-slate-400 hover:text-rose-500 p-1" title="刪除">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0 no-export">
-              <button type="button" onclick="editQuickLogItem(${item.id})" class="text-slate-400 hover:text-blue-600 p-1" title="編輯修改">
-                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-              </button>
-              <button type="button" onclick="deleteWorkLogAndSync(${item.id})" class="text-slate-400 hover:text-rose-500 p-1" title="刪除">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
+            ${hasPhotos ? `
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 items-start bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/80">
+                ${item.photos.map((src, pIdx) => `
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 font-bold px-0.5">
+                      <span class="text-cyan-700 bg-cyan-50 px-1.5 py-0.2 rounded border border-cyan-200">圖 ${pIdx + 1}</span>
+                    </div>
+                    <img src="${src}" class="w-full h-auto rounded-lg border border-slate-200 bg-white block shadow-2xs">
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
           </div>
-          ${Array.isArray(item.photos) && item.photos.length > 0 ? `
-            <div class="grid grid-cols-2 gap-2 pt-1 items-start">
-              ${item.photos.map(src => `<img src="${src}" class="w-full h-auto rounded-lg border border-slate-200 block">`).join('')}
-            </div>
-          ` : ''}
-        </div>
-      `).join('') || '<p class="text-xs text-slate-400 py-6 text-center">尚無符合條件的工作日誌或排程，請點擊上方「新增日誌／排程」</p>';
+        `;
+      }).join('') || '<p class="text-xs text-slate-400 py-6 text-center">尚無符合條件的工作日誌或排程，請點擊上方「新增日誌／排程」</p>';
       lucide.createIcons();
     }
-
-    async function captureAndDownloadImage(elementId, filename) {
-      const target = document.getElementById(elementId);
-      if (!target) return;
-      const hiddenBtns = target.querySelectorAll('.no-export');
-      hiddenBtns.forEach(el => el.classList.add('hidden'));
-      try {
-        const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } catch (e) {
-        alert('匯出圖片失敗，請稍後再試');
-      } finally {
-        hiddenBtns.forEach(el => el.classList.remove('hidden'));
-      }
-    }
+  
 
     function exportDailyReportImage() {
       const dateTag = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
