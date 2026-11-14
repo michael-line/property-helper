@@ -2229,5 +2229,28 @@
       };
       reader.readAsText(file);
     }
-    
+    function importLocalJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!imported.meta) { alert('檔案格式不符'); return; }
+          if (!confirm(`確定要匯入「${imported.meta.communityName || '備份檔'}」嗎？這將覆蓋目前資料並自動同步至您的 Google 雲端硬碟。`)) return;
+          appData = { ...appData, ...imported };
+          await syncToCloud();
+          alert('匯入還原成功！');
+        } catch (err) {
+          alert('JSON 解析失敗');
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+  </script>
+  
+</body>
+</html>
     
