@@ -1349,9 +1349,11 @@
       }
     }
 
-    function exportDailyReportImage() {
+    async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
-      
+      const targetArea = document.getElementById('daily-report-capture-area');
+      if (!targetArea) return;
+
       // 1. 自動同步備份一份至「日誌列印」卡片模組內
       if (typeof renderDailyLogPrintView === 'function') {
         const printDateInput = document.getElementById('dl-print-date');
@@ -1361,12 +1363,67 @@
         }
       }
 
-      // 2. 彈出預覽確認提示，確認無誤後再真正下載圖片
-      const confirmExport = confirm(`📅 已為您自動同步備份至【日誌列印】卡片內！\n\n是否確認要將 ${filterDate} 的工作日誌與現場圖片正式匯出下載？`);
-      
-      if (confirmExport) {
-        captureAndDownloadImage('daily-report-capture-area', `工作日誌與排程呈報_${filterDate}.png`);
+      // 2. 隱藏不需要被拍進圖裡的按鈕（如編輯、刪除圖示）
+      const hiddenEls = targetArea.querySelectorAll('.no-export');
+      hiddenEls.forEach(el => el.style.display = 'none');
+
+      try {
+        // 3. 即時動態產生畫布圖片預覽
+        const canvas = await html2canvas(targetArea, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+        const imgDataUrl = canvas.toDataURL('image/png');
+
+        // 4. 建立預覽彈窗，讓你可以直接「看到整張即將生成的圖片」
+        let modal = document.getElementById('report-preview-modal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'report-preview-modal';
+          modal.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 no-print';
+          document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+          <div class="bg-white rounded-2xl max-w-2xl w-full p-4 shadow-2xl flex flex-col max-h-[90vh] space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                📷 ${filterDate} 工作日誌呈報圖片即時預覽
+              </h3>
+              <button onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1">✕ 關閉</button>
+            </div>
+            
+            <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
+              <img src="${imgDataUrl}" class="max-w-full h-auto object-contain rounded shadow-sm border border-slate-300">
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <span class="text-slate-500">💡 已自動同步備份至【日誌列印】卡片內。請確認預覽無誤後點擊下載。</span>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
+                  確認無誤，正式下載圖片
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        modal.style.display = 'flex';
+
+      } catch (err) {
+        console.error(err);
+        alert('產生呈報圖片預覽失敗，請稍後再試');
+      } finally {
+        hiddenEls.forEach(el => el.style.display = '');
       }
+    }
+
+    // 確認下載呈報圖片
+    function confirmDownloadReport(imgDataUrl, filterDate) {
+      const link = document.createElement('a');
+      link.download = `工作日誌呈報_${filterDate}.png`;
+      link.href = imgDataUrl;
+      link.click();
+
+      const modal = document.getElementById('report-preview-modal');
+      if (modal) modal.remove();
     }
 
     function renderDailyLogPrintView() {
