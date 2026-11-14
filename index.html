@@ -1393,9 +1393,9 @@
               <button onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1">✕ 關閉</button>
             </div>
             
-            <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
-              <img src="${imgDataUrl}" class="max-w-full max-h-[70vh] w-auto object-contain rounded shadow-sm border border-slate-300">
-            </div>
+           <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
+  <img src="${imgDataUrl}" style="max-height: 70vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300">
+</div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
               <span class="text-slate-500">💡 已同步至【日誌列印】卡片內。請確認預覽無誤後點擊下載。</span>
@@ -1430,7 +1430,6 @@
     }
 
     function renderDailyLogPrintView() {
-      // 1. 強制雙向同步日誌列印卡片的日期與上方篩選日期
       const quickDateEl = document.getElementById('ql-filter-date');
       const printDateInput = document.getElementById('dl-print-date');
       
@@ -1446,7 +1445,6 @@
       if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
       if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
       
-      // 2. 從資料源正確過濾出當日紀錄
       const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
 
