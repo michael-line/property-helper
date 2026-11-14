@@ -1348,9 +1348,11 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 統一共用的乾淨匯出函式（強制輸出不變形的 JPG 格式，並保護相片比例）
+// 統一共用的乾淨匯出函式（強制輸出高品質 JPG、自動鎖定 650px 寬度、並完美保護相片長寬比例）
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
+      
+      // 自動對應：如果在首頁就抓首頁容器，如果在日誌列印卡片就抓日誌列印容器
       const targetArea = document.getElementById('daily-report-capture-area') || document.getElementById('dailylog-print-area');
       if (!targetArea) return;
 
@@ -1358,7 +1360,25 @@
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
-      // 2. 在截圖前，將目標區塊強制鎖定為固定的直式報表寬度（650px），防止桌機寬螢幕拉扁
+      // 2. 🎯 關鍵升級：在截圖前，自動把畫面中所有相片的樣式暫時放大並保護為完美比例，絕不變成縮圖或被壓扁
+      const photoImgs = targetArea.querySelectorAll('img');
+      const originalImageStyles = [];
+      photoImgs.forEach(img => {
+        originalImageStyles.push({
+          el: img,
+          maxHeight: img.style.maxHeight,
+          height: img.style.height,
+          width: img.style.width,
+          objectFit: img.style.objectFit
+        });
+        img.style.maxHeight = '240px';
+        img.style.height = 'auto';
+        img.style.width = 'auto';
+        img.style.objectFit = 'contain';
+        img.style.margin = '0 auto';
+      });
+
+      // 3. 強制鎖定直式報表標準寬度（650px），防止桌機寬螢幕把畫面拉扁
       const originalWidth = targetArea.style.width;
       const originalMaxWidth = targetArea.style.maxWidth;
       const originalMargin = targetArea.style.margin;
@@ -1368,7 +1388,7 @@
       targetArea.style.margin = '0 auto';
 
       try {
-        // 3. 進行高品質截圖
+        // 4. 進行高品質截圖
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
@@ -1396,12 +1416,11 @@
             </div>
             
             <div class="flex-1 overflow-auto bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-center">
-              <!-- 確保彈窗預覽維持完美比例，絕不破圖或變形 -->
               <img src="${imgDataUrl}" style="max-height: 65vh; width: auto; height: auto; object-fit: contain;" class="rounded shadow-sm border border-slate-300 block mx-auto">
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 畫面比例已強制鎖定為標準直式報表，請確認後下載。</span>
+              <span class="text-slate-500">💡 畫面比例與相片已完美鎖定，請確認後下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1417,10 +1436,18 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        // 4. 還原畫面的原始寬度
+        // 5. 還原畫面的原始寬度與相片的原始樣式
         targetArea.style.width = originalWidth;
         targetArea.style.maxWidth = originalMaxWidth;
         targetArea.style.margin = originalMargin;
+        
+        originalImageStyles.forEach(item => {
+          item.el.style.maxHeight = item.maxHeight;
+          item.el.style.height = item.height;
+          item.el.style.width = item.width;
+          item.el.style.objectFit = item.objectFit;
+        });
+
         hiddenEls.forEach(el => el.style.display = '');
       }
     }
