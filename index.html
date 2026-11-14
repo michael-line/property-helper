@@ -1377,11 +1377,11 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🌟 完美互動版：支援按鈕即時變色、字體/相片大小調整、比例還原與預覽
+// 🌟 最終修復版：完美掌控按鈕高亮、字體與相片尺寸縮放、以及高清預覽彈窗
     let currentFontSize = 'normal'; // 可選: small, normal, large
     let currentPhotoSize = 'medium'; // 可選: small, medium, large
 
-    // 切換字體大小並即時讓按鈕變色
+    // 切換字體大小並即時切換按鈕顏色
     function changeLogFontSize(size) {
       currentFontSize = size;
       ['small', 'normal', 'large'].forEach(s => {
@@ -1396,7 +1396,7 @@
       renderDailyLogPrintView();
     }
 
-    // 切換相片尺寸並即時讓按鈕變色
+    // 切換相片尺寸並即時切換按鈕顏色
     function changeLogPhotoSize(size) {
       currentPhotoSize = size;
       ['small', 'medium', 'large'].forEach(s => {
@@ -1411,7 +1411,7 @@
       renderDailyLogPrintView();
     }
 
-    // 🎯 核心繪製與 A4 自動分頁渲染
+    // 🎯 核心繪製與 A4 自動分頁渲染（嚴格套用動態字體與相片尺寸）
     function renderDailyLogPrintView() {
       const quickDateEl = document.getElementById('ql-filter-date');
       const printDateInput = document.getElementById('dl-print-date');
@@ -1465,16 +1465,20 @@
       const container = document.getElementById('dl-print-list');
       if (!container) return;
 
+      // 🎯 根據手動選擇精準控制字體大小與相片網格排版
       let fontSizeClass = 'text-sm';
       let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
+      let imgMaxHeight = '120px';
 
       if (currentFontSize === 'small') fontSizeClass = 'text-xs';
       if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
 
       if (currentPhotoSize === 'small') {
         photoGridClass = 'grid-cols-4 sm:grid-cols-6';
+        imgMaxHeight = '90px';
       } else if (currentPhotoSize === 'large') {
         photoGridClass = 'grid-cols-1 sm:grid-cols-2';
+        imgMaxHeight = '220px';
       }
 
       let pagesHtml = '';
@@ -1508,7 +1512,7 @@
                 <div class="grid ${photoGridClass} gap-2 items-start">
                   ${allPhotosToday.map(p => `
                     <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
-                      <img src="${p.src}" style="width: 100%; height: auto; object-fit: contain;" class="rounded block mx-auto">
+                      <img src="${p.src}" style="max-height: ${imgMaxHeight}; width: auto; height: auto; object-fit: contain;" class="rounded block mx-auto">
                       <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
                     </div>
                   `).join('')}
@@ -1522,7 +1526,7 @@
       container.innerHTML = pagesHtml;
     }
 
-    // 🎯 支援多頁與手動調整的高清預覽與匯出函式
+    // 🎯 確保預覽彈窗必定正常跳出之高清匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
@@ -1549,9 +1553,10 @@
         if (!modal) {
           modal = document.createElement('div');
           modal.id = 'report-preview-modal';
-          modal.className = 'fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-3 no-print';
           document.body.appendChild(modal);
         }
+        // 強制設定置頂與滿版樣式，絕不被遮擋
+        modal.className = 'fixed inset-0 bg-slate-900/80 z-[99999] flex items-center justify-center p-3 no-print';
 
         modal.innerHTML = `
           <div class="bg-white rounded-2xl max-w-xl w-full p-4 shadow-2xl flex flex-col max-h-[92vh] space-y-3">
@@ -1595,6 +1600,10 @@
 
       const modal = document.getElementById('report-preview-modal');
       if (modal) modal.remove();
+    }
+
+    function exportDailyLogPrintImage() {
+      exportDailyReportImage();
     }
 
     function exportDailyLogPrintImage() {
