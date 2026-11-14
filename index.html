@@ -495,7 +495,21 @@
             </button>
           </div>
         </div>
-
+<!-- 字體與相片大小手動微調控制列 -->
+  <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 mb-3 no-print">
+    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+      <span>🔤 字體：</span>
+      <button type="button" id="font-btn-small" onclick="changeLogFontSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小</button>
+      <button type="button" id="font-btn-normal" onclick="changeLogFontSize('normal')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">標準</button>
+      <button type="button" id="font-btn-large" onclick="changeLogFontSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大</button>
+    </div>
+    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+      <span>🖼️ 相片：</span>
+      <button type="button" id="photo-btn-small" onclick="changeLogPhotoSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小圖</button>
+      <button type="button" id="photo-btn-medium" onclick="changeLogPhotoSize('medium')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">中圖</button>
+      <button type="button" id="photo-btn-large" onclick="changeLogPhotoSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大圖</button>
+    </div>
+  </div>
         <!-- 日期選擇列 -->
         <div class="flex flex-wrap items-center gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200 no-print">
           <span class="font-bold text-slate-700">選擇列印日期：</span>
@@ -1363,19 +1377,37 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🌟 全新升級版：支援手動調整字體/相片大小、維持照片原比例、以及 A4 自動分頁與高清預覽
+// 🌟 完美互動版：支援按鈕即時變色、字體/相片大小調整、比例還原與預覽
     let currentFontSize = 'normal'; // 可選: small, normal, large
     let currentPhotoSize = 'medium'; // 可選: small, medium, large
 
-    // 切換字體大小
+    // 切換字體大小並即時讓按鈕變色
     function changeLogFontSize(size) {
       currentFontSize = size;
+      ['small', 'normal', 'large'].forEach(s => {
+        const btn = document.getElementById(`font-btn-${s}`);
+        if (!btn) return;
+        if (s === size) {
+          btn.className = "px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs";
+        } else {
+          btn.className = "px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100";
+        }
+      });
       renderDailyLogPrintView();
     }
 
-    // 切換相片尺寸
+    // 切換相片尺寸並即時讓按鈕變色
     function changeLogPhotoSize(size) {
       currentPhotoSize = size;
+      ['small', 'medium', 'large'].forEach(s => {
+        const btn = document.getElementById(`photo-btn-${s}`);
+        if (!btn) return;
+        if (s === size) {
+          btn.className = "px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs";
+        } else {
+          btn.className = "px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100";
+        }
+      });
       renderDailyLogPrintView();
     }
 
@@ -1427,7 +1459,6 @@
         return { ...item, itemPhotoTags };
       });
 
-      // 🎯 自動分頁邏輯：若項目過多，自動切分為多頁 A4 結構
       const pageSize = 5; 
       const totalPages = Math.max(1, Math.ceil(processedList.length / pageSize));
 
@@ -1490,7 +1521,8 @@
 
       container.innerHTML = pagesHtml;
     }
-   // 🎯 支援多頁與手動調整的高清匯出函式
+
+    // 🎯 支援多頁與手動調整的高清預覽與匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
