@@ -1196,7 +1196,6 @@
 
       container.innerHTML = list.map(item => {
         const hasPhotos = Array.isArray(item.photos) && item.photos.length > 0;
-        // 如果有上傳相片，在文字後方自動產生圖號標示（例如：圖1、圖2...）
         const photoBadges = hasPhotos 
           ? `<span class="inline-flex gap-1 ml-1.5 align-middle">${item.photos.map((_, pIdx) => `<span class="text-[11px] bg-cyan-50 text-cyan-700 border border-cyan-200 px-1.5 py-0.2 rounded font-mono font-bold">圖${pIdx + 1}</span>`).join('')}</span>` 
           : '';
@@ -1235,10 +1234,10 @@
             ` : ''}
           </div>
         `;
-      }).join('') || '<p class="text-xs text-slate-400 py-6 text-center">尚無符合條件的工作日誌或排程，請點擊上方「新增日誌／排程」</p>';
+      }).join('') || '<p class="text-xs text-slate-400 py-6 text-center">尚無符合條件的工作日誌或排程，請點擊上方專用按鈕新增</p>';
       lucide.createIcons();
-    }
-  }
+     }
+     }
 
     function exportDailyReportImage() {
       const dateTag = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
