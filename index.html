@@ -1449,7 +1449,7 @@
         const apiKey = localStorage.getItem('pm_gemini_key');
         if (apiKey) {
           const base64Data = photoB64.split(',')[1];
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1939,7 +1939,7 @@
       const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r=>r.status!=='已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
