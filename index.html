@@ -1430,29 +1430,44 @@
     }
 
     function renderDailyLogPrintView() {
-      const filterDate = document.getElementById('dl-print-date')?.value || '';
-      const comm = appData.meta.communityName || '小A 物業管理';
-      document.getElementById('dl-print-title').innerText = `${comm} · 工作日誌與排程呈報表`;
-      document.getElementById('dl-print-subtitle').innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
+      // 1. 強制雙向同步日誌列印卡片的日期與上方篩選日期
+      const quickDateEl = document.getElementById('ql-filter-date');
+      const printDateInput = document.getElementById('dl-print-date');
+      
+      let filterDate = printDateInput?.value || quickDateEl?.value || '';
+      if (printDateInput && !printDateInput.value && quickDateEl) {
+        printDateInput.value = quickDateEl.value;
+        filterDate = quickDateEl.value;
+      }
 
+      const comm = appData.meta.communityName || '最上境大廈管委會';
+      const titleEl = document.getElementById('dl-print-title');
+      const subEl = document.getElementById('dl-print-subtitle');
+      if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
+      if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
+      
+      // 2. 從資料源正確過濾出當日紀錄
       const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
 
-      document.getElementById('dl-print-list').innerHTML = list.map(item => `
+      const container = document.getElementById('dl-print-list');
+      if (!container) return;
+
+      container.innerHTML = list.map(item => `
         <div class="py-3 space-y-2">
           <div class="flex items-start justify-between gap-2">
             <div class="text-sm leading-relaxed">
               <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
               ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
               ${!filterDate ? `<span class="text-xs font-mono text-slate-500 mr-1.5">${item.date}</span>` : ''}
-              <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded mr-1.5">${item.type}</span>
+              <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded mr-1.5">${item.type || '一般紀錄'}</span>
               <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
             </div>
             <button type="button" onclick="deleteWorkLogAndSync(${item.id}); renderDailyLogPrintView();" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded border border-rose-200 shrink-0 no-print no-export">刪除</button>
           </div>
           ${Array.isArray(item.photos) && item.photos.length > 0 ? `
-            <div class="grid grid-cols-2 gap-2 pt-1 items-start">
-              ${item.photos.map(src => `<img src="${src}" class="w-full h-auto rounded-lg border border-slate-300 block">`).join('')}
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 items-start">
+              ${item.photos.map(src => `<img src="${src}" style="max-height: 200px; width: auto; height: auto; object-fit: contain;" class="rounded-lg border border-slate-300 bg-slate-50 block">`).join('')}
             </div>
           ` : ''}
         </div>
