@@ -1348,11 +1348,12 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 終極修正版：強制鎖定 A4 直式比例（800x1130）、高畫質、絕對不變形
+// 🎯 雙端完美適配版：確保手機與電腦皆維持正常直式比例、高畫質預覽與下載
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      const targetArea = document.getElementById('daily-report-capture-area') || document.getElementById('dailylog-print-area');
+      // 精準判斷：如果是從日誌列印卡片按下的，就抓日誌列印區塊；否則抓首頁日誌區塊
+      const targetArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
       if (!targetArea) {
         alert('找不到呈報內容區域');
         return;
@@ -1362,28 +1363,17 @@
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
-      // 2. 強制將截圖目標區塊鎖定為標準直式 A4 比例寬度（800px）
-      const originalWidth = targetArea.style.width;
-      const originalMaxWidth = targetArea.style.maxWidth;
-      const originalMargin = targetArea.style.margin;
-
-      targetArea.style.width = '800px';
-      targetArea.style.maxWidth = '800px';
-      targetArea.style.margin = '0 auto';
-
       try {
-        // 3. 關鍵：強制 windowWidth 為 800，確保無論手機或電腦，截圖比例都嚴格對齊直式報表
+        // 2. 以標準高畫質渲染 (scale: 2 確保清晰度，且不強行干擾手機視窗寬高，確保直式比例不變形)
         const canvas = await html2canvas(targetArea, { 
-          scale: 2.5, 
+          scale: 2, 
           backgroundColor: '#ffffff', 
-          useCORS: true,
-          windowWidth: 800,
-          windowHeight: 1130
+          useCORS: true
         });
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 4. 建立預覽彈窗
+        // 3. 建立或更新高畫質預覽彈窗
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1406,7 +1396,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 比例已強制鎖定為標準 A4 直式，請確認後點擊下載。</span>
+              <span class="text-slate-500">💡 預覽畫面已產生，請確認無誤後點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1422,10 +1412,6 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        // 5. 還原畫面原始樣式
-        targetArea.style.width = originalWidth;
-        targetArea.style.maxWidth = originalMaxWidth;
-        targetArea.style.margin = originalMargin;
         hiddenEls.forEach(el => el.style.display = '');
       }
     }
