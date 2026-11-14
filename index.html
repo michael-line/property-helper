@@ -1348,11 +1348,10 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 終極完美版：完整展開日誌與現場圖片、秒開預覽、確保 A4 直式比例
+// 🎯 完整修正版：絕對 A4 直式、高畫質、秒開預覽
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      // 精準抓取當前畫面上完整的呈報或日誌列印區塊
       const targetArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
       if (!targetArea) {
         alert('找不到呈報內容區域');
@@ -1364,7 +1363,7 @@
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        // 2. 高畫質渲染 (scale: 2 確保清晰度，windowWidth: 750 鎖定 A4 直式標準比例)
+        // 2. 高畫質渲染 (scale: 2 確保極致清晰，windowWidth: 750 鎖定標準 A4 直式比例)
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
@@ -1397,7 +1396,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 預覽已產出，確認無誤後請點擊右側下載。</span>
+              <span class="text-slate-500">💡 比例已強制鎖定為 A4 直式高清，確認無誤後請點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}_${Date.now().toString().slice(-4)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
