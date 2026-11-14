@@ -1945,5 +1945,20 @@
       reader.readAsText(file);
     }
   </script>
+  // 自動載入預設 Client ID 與參數 (免重複設定機制)
+    const DEFAULT_CLIENT_ID = '1004788006918-56ujm7ln8k2ra8ndmrd6kapcsi53aiud.apps.googleusercontent.com';
+    (function autoLoadKeysFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const urlClientId = params.get('cid');
+      const urlGeminiKey = params.get('gkey');
+      if (urlClientId) localStorage.setItem('pm_google_client_id', urlClientId);
+      else if (!localStorage.getItem('pm_google_client_id') && DEFAULT_CLIENT_ID) {
+        localStorage.setItem('pm_google_client_id', DEFAULT_CLIENT_ID);
+      }
+      if (urlGeminiKey) localStorage.setItem('pm_gemini_key', urlGeminiKey);
+      if (urlClientId || urlGeminiKey) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    })();
 </body>
 </html>
