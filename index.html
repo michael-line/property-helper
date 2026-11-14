@@ -463,6 +463,21 @@
       </div>
     </section>
     <!-- ================= 6. 日誌列印（依日期讀取首頁紀錄、支援刪除與再次輸出） ================= -->
+    <!-- 字體與相片大小手動微調控制列 -->
+<div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 mb-3 no-print">
+  <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+    <span>🔤 字體：</span>
+    <button type="button" onclick="changeLogFontSize('small')" class="px-2 py-1 bg-white border rounded hover:bg-slate-100">小</button>
+    <button type="button" onclick="changeLogFontSize('normal')" class="px-2 py-1 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded">標準</button>
+    <button type="button" onclick="changeLogFontSize('large')" class="px-2 py-1 bg-white border rounded hover:bg-slate-100">大</button>
+  </div>
+  <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+    <span>🖼️ 相片：</span>
+    <button type="button" onclick="changeLogPhotoSize('small')" class="px-2 py-1 bg-white border rounded hover:bg-slate-100">小圖</button>
+    <button type="button" onclick="changeLogPhotoSize('medium')" class="px-2 py-1 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded">中圖</button>
+    <button type="button" onclick="changeLogPhotoSize('large')" class="px-2 py-1 bg-white border rounded hover:bg-slate-100">大圖</button>
+  </div>
+</div>
     <section id="view-dailylog" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 no-print">
@@ -1348,73 +1363,153 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 智慧排版升級版：自動最佳化字體大小、現場圖片排版，解決手機超出格子問題
+// 🌟 全新升級版：支援手動調整字體/相片大小、維持照片原比例、以及 A4 自動分頁與高清預覽
+    let currentFontSize = 'normal'; // 可選: small, normal, large
+    let currentPhotoSize = 'medium'; // 可選: small, medium, large
+
+    // 切換字體大小
+    function changeLogFontSize(size) {
+      currentFontSize = size;
+      renderDailyLogPrintView();
+    }
+
+    // 切換相片尺寸
+    function changeLogPhotoSize(size) {
+      currentPhotoSize = size;
+      renderDailyLogPrintView();
+    }
+
+    // 🎯 核心繪製與 A4 自動分頁渲染
+    function renderDailyLogPrintView() {
+      const quickDateEl = document.getElementById('ql-filter-date');
+      const printDateInput = document.getElementById('dl-print-date');
+      
+      let filterDate = printDateInput?.value || quickDateEl?.value || '';
+      if (printDateInput && !printDateInput.value && quickDateEl) {
+        printDateInput.value = quickDateEl.value;
+        filterDate = quickDateEl.value;
+      }
+
+      const comm = appData.meta.communityName || '最上境大廈管委會';
+      const titleEl = document.getElementById('dl-print-title');
+      const subEl = document.getElementById('dl-print-subtitle');
+      if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
+      if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
+      
+      const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
+      
+      const badge = document.getElementById('dailylog-total-badge');
+      if (badge) badge.innerText = `共 ${list.length} 筆`;
+
+      const statusLabelMap = { 
+        red: '🔴 紅色 (緊急/重要)', 
+        blue: '🔵 藍色 (行政/公告)', 
+        green: '🟢 綠色 (維保/完成)', 
+        purple: '🟣 紫色 (建議/規劃)', 
+        default: '⚫ 一般紀錄' 
+      };
+
+      let photoGlobalIndex = 1;
+      const allPhotosToday = [];
+
+      const processedList = list.map(item => {
+        let itemPhotoTags = '';
+        if (Array.isArray(item.photos) && item.photos.length > 0) {
+          const startIdx = photoGlobalIndex;
+          const endIdx = photoGlobalIndex + item.photos.length - 1;
+          itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
+          
+          item.photos.forEach(src => {
+            allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
+            photoGlobalIndex++;
+          });
+        }
+        return { ...item, itemPhotoTags };
+      });
+
+      // 🎯 自動分頁邏輯：若項目過多，自動切分為多頁 A4 結構
+      const pageSize = 5; 
+      const totalPages = Math.max(1, Math.ceil(processedList.length / pageSize));
+
+      const container = document.getElementById('dl-print-list');
+      if (!container) return;
+
+      // 根據手動設定決定字體與相片樣式
+      let fontSizeClass = 'text-sm';
+      let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
+      let maxImgHeight = '120px';
+
+      if (currentFontSize === 'small') fontSizeClass = 'text-xs';
+      if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
+
+      if (currentPhotoSize === 'small') {
+        photoGridClass = 'grid-cols-4 sm:grid-cols-6';
+        maxImgHeight = '90px';
+      } else if (currentPhotoSize === 'large') {
+        photoGridClass = 'grid-cols-2 sm:grid-cols-3';
+        maxImgHeight = '180px';
+      }
+
+      let pagesHtml = '';
+      for (let page = 0; page < totalPages; page++) {
+        const pageItems = processedList.slice(page * pageSize, (page + 1) * pageSize);
+        const isLastPage = (page === totalPages - 1);
+
+        pagesHtml += `
+          <div class="a4-page-box bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 relative space-y-4" style="page-break-after: always; break-after: page;">
+            <div class="flex justify-between items-center border-b pb-2 text-xs text-slate-400">
+              <span>${comm} - 工作日誌</span>
+              <span>第 ${page + 1} 頁 / 共 ${totalPages} 頁</span>
+            </div>
+
+            <div class="divide-y divide-slate-200" style="word-break: break-all; overflow-wrap: break-word;">
+              ${pageItems.map(item => `
+                <div class="py-3 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
+                  <div class="${fontSizeClass} leading-relaxed" style="word-break: break-all; overflow-wrap: break-word; max-width: 100%;">
+                    ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
+                    <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium shrink-0">${statusLabelMap[item.color] || statusLabelMap.default}</span>
+                    <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
+                    <span class="text-xs font-bold text-cyan-700 ml-1 shrink-0">${item.itemPhotoTags}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            ${isLastPage && allPhotosToday.length > 0 ? `
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-4">
+                <p class="text-xs font-bold text-slate-700">📷 ${filterDate} 現場圖片呈報總覽 (${allPhotosToday.length}張)</p>
+                <div class="grid ${photoGridClass} gap-2 items-start">
+                  ${allPhotosToday.map(p => `
+                    <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
+                      <img src="${p.src}" style="max-height: ${maxImgHeight}; width: auto; height: auto; object-fit: contain;" class="rounded block mx-auto">
+                      <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      container.innerHTML = pagesHtml;
+    }
+
+    // 🎯 支援多頁與手動調整的高清匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      const sourceArea = document.getElementById('daily-report-capture-area') || document.getElementById('dailylog-print-area');
-      if (!sourceArea) {
+      const targetArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
+      if (!targetArea) {
         alert('找不到呈報內容區域');
         return;
       }
 
-      // 1. 複製當前內容並建立標準 A4 直式容器（固定寬度 750px）
-      const cloneArea = sourceArea.cloneNode(true);
-      cloneArea.style.position = 'fixed';
-      cloneArea.style.left = '-9999px';
-      cloneArea.style.top = '0';
-      cloneArea.style.width = '750px';
-      cloneArea.style.maxWidth = '750px';
-      cloneArea.style.backgroundColor = '#ffffff';
-      cloneArea.style.padding = '32px'; // 加大留白，讓版面不空虛
-      cloneArea.style.boxSizing = 'border-box';
-      cloneArea.style.zIndex = '-999';
-
-      // 移除不需要被拍進圖裡的按鈕
-      cloneArea.querySelectorAll('.no-export').forEach(el => el.remove());
-
-      // 2. 智慧調整字體與排版（針對內容較少時自動放大、閱讀更舒適、絕不超出格子）
-      cloneArea.querySelectorAll('*').forEach(el => {
-        el.style.wordBreak = 'break-all';
-        el.style.overflowWrap = 'break-word';
-      });
-
-      // 放大文字標題與內文，解決閱讀吃力問題
-      cloneArea.querySelectorAll('h3, h4').forEach(h => {
-        h.style.fontSize = '20px';
-        h.style.lineHeight = '1.4';
-      });
-
-      cloneArea.querySelectorAll('.text-sm, p, span').forEach(txt => {
-        if (!txt.classList.contains('font-mono') && !txt.classList.contains('text-xs')) {
-          txt.style.fontSize = '16px'; // 舒適的閱讀字體
-          txt.style.lineHeight = '1.6';
-        }
-      });
-
-      // 3. 最佳化現場圖片大小與格狀排列
-      const imgContainer = cloneArea.querySelector('.grid');
-      if (imgContainer) {
-        imgContainer.style.display = 'grid';
-        imgContainer.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))'; // 改為整齊的雙欄大圖排版
-        imgContainer.style.gap = '12px';
-      }
-
-      cloneArea.querySelectorAll('img').forEach(img => {
-        img.style.maxHeight = '280px'; // 放大圖片，避免內容少時顯得空虛
-        img.style.width = '100%';
-        img.style.height = 'auto';
-        img.style.objectFit = 'contain';
-        img.style.borderRadius = '8px';
-        img.style.background = '#f8fafc';
-        img.style.border = '1px solid #e2e8f0';
-      });
-
-      document.body.appendChild(cloneArea);
+      const hiddenEls = targetArea.querySelectorAll('.no-export');
+      hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        // 4. 進行高畫質截圖
-        const canvas = await html2canvas(cloneArea, { 
+        const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
           useCORS: true,
@@ -1423,7 +1518,6 @@
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 5. 建立高畫質預覽彈窗
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1446,7 +1540,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 字體與圖片已自動優化放大，確認無誤後請點擊下載。</span>
+              <span class="text-slate-500">💡 支援多頁自動排版與比例維持，確認無誤後請點擊下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}_${Date.now().toString().slice(-4)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1462,11 +1556,10 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
-        document.body.removeChild(cloneArea);
+        hiddenEls.forEach(el => el.style.display = '');
       }
     }
 
-    // 確認下載函式
     function confirmDownloadReport(imgDataUrl, fileSuffix) {
       const link = document.createElement('a');
       link.download = `工作日誌呈報_${fileSuffix}.jpg`;
@@ -1475,6 +1568,10 @@
 
       const modal = document.getElementById('report-preview-modal');
       if (modal) modal.remove();
+    }
+
+    function exportDailyLogPrintImage() {
+      exportDailyReportImage();
     }
 
    // 🎯 確保日誌列印畫面完整展開該日期的「所有筆數」與自動換行防溢出
