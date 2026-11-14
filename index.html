@@ -1944,7 +1944,7 @@
       };
       reader.readAsText(file);
     }
-  // 自動載入預設 Client ID 與參數 (免重複設定機制)
+ // 自動載入預設 Client ID 與參數 (免重複設定機制 + 自動雲端觸發)
     const DEFAULT_CLIENT_ID = '1004788006918-56ujm7ln8k2ra8ndmrd6kapcsi53aiud.apps.googleusercontent.com';
     (function autoLoadKeysFromUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -1957,6 +1957,17 @@
       if (urlGeminiKey) localStorage.setItem('pm_gemini_key', urlGeminiKey);
       if (urlClientId || urlGeminiKey) {
         window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // ★ 關鍵新增：如果本機已經有 Client ID，開機瞬間自動初始化 Google 登入檢查
+      if (localStorage.getItem('pm_google_client_id')) {
+        window.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            if (typeof handleClientLoad === 'function') {
+              handleClientLoad();
+            }
+          }, 500);
+        });
       }
     })();
   </script>
