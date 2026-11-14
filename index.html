@@ -1528,21 +1528,30 @@
 
     // 🎯 確保預覽彈窗必定正常跳出之高清匯出函式
     // 🎯 完美修復截圖破圖問題的高清匯出函式
+    // 🎯 智慧容錯與自動重試的高清預覽與匯出函式
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
-      const targetArea = document.getElementById('dailylog-print-area') || document.getElementById('daily-report-capture-area');
+      // 自動尋找有資料的列印或呈報區域
+      let targetArea = document.getElementById('dailylog-print-area');
+      if (!targetArea || targetArea.innerText.trim().length < 5) {
+        targetArea = document.getElementById('daily-report-capture-area');
+      }
+      
       if (!targetArea) {
-        alert('找不到呈報內容區域');
+        alert('找不到呈報內容區域，請確認目前有工作日誌紀錄');
         return;
       }
 
-      // 暫時隱藏不希望拍進去的按鈕
-      const hiddenEls = targetArea.querySelectorAll('.no-export');
+      // 暫時隱藏不希望拍進去的按鈕與控制列
+      const hiddenEls = targetArea.querySelectorAll('.no-export, .no-print');
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        // 使用 allowTaint 與 useCORS 確保圖片順利渲染不破圖
+        // 賦予明確寬度確保截圖不變形
+        const originalWidth = targetArea.style.width;
+        targetArea.style.width = '750px';
+
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
@@ -1551,6 +1560,7 @@
           windowWidth: 750
         });
         
+        targetArea.style.width = originalWidth;
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
         let modal = document.getElementById('report-preview-modal');
@@ -1589,7 +1599,7 @@
 
       } catch (err) {
         console.error(err);
-        alert('產生呈報圖片失敗，請稍後再試');
+        alert('產生呈報圖片失敗，請檢查主控台錯誤訊息');
       } finally {
         hiddenEls.forEach(el => el.style.display = '');
       }
