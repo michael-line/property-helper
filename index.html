@@ -1349,17 +1349,19 @@
       }
     }
 
-    async function exportDailyReportImage() {
+   async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
       const targetArea = document.getElementById('daily-report-capture-area');
       if (!targetArea) return;
 
-      // 1. 自動同步備份一份至「日誌列印」卡片模組內，並立即重新渲染
+      // 🎯 強制將日期同步給日誌列印模組的日期輸入框，並安全觸發重新渲染
       const printDateInput = document.getElementById('dl-print-date');
       if (printDateInput) {
         printDateInput.value = filterDate;
       }
-      if (typeof renderDailyLogPrintView === 'function') {
+      if (typeof window.renderDailyLogPrintView === 'function') {
+        window.renderDailyLogPrintView();
+      } else if (typeof renderDailyLogPrintView === 'function') {
         renderDailyLogPrintView();
       }
 
