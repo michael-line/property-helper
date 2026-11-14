@@ -1474,9 +1474,9 @@
       `).join('') || '<p class="text-xs text-slate-400 py-8 text-center">此日期尚無工作日誌紀錄</p>';
     }
 
-    function exportDailyLogPrintImage() {
+   function exportDailyLogPrintImage() {
       const dateTag = document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
-      captureAndDownloadImage('dailylog-print-area', `日誌列印輸出_${dateTag}.png`);
+      captureAndDownloadImage('daily-report-capture-area', `工作日誌呈報_${dateTag}.png`);
     }
     // ================= 5. 大事紀要（匯出保持相片原比例不變形） =================
     function setEventColorFilter(color) {
