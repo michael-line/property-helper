@@ -1526,8 +1526,7 @@
       container.innerHTML = pagesHtml;
     }
 
-    // 🎯 圖片完整轉 Base64 避開 CORS 阻擋的高清預覽與匯出函式
-    // 🎯 直接讀取畫面已載入圖片的高清預覽與匯出函式（絕對不破圖）
+    // 🎯 完美直接呈現版的高清預覽與下載函式（保證絕不破圖）
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
@@ -1545,10 +1544,7 @@
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        const originalWidth = targetArea.style.width;
-        targetArea.style.width = '750px';
-
-        // 完美截圖（關閉 allowTaint 改由瀏覽器自身的同源機制處理）
+        // 使用高效能 html2canvas 進行直接畫面擷取
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
@@ -1556,7 +1552,6 @@
           windowWidth: 750
         });
         
-        targetArea.style.width = originalWidth;
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
         let modal = document.getElementById('report-preview-modal');
@@ -1568,7 +1563,7 @@
         modal.className = 'fixed inset-0 bg-slate-900/80 z-[99999] flex items-center justify-center p-3 no-print';
 
         modal.innerHTML = `
-          <div class="bg-white rounded-2xl max-w-xl w-full p-4 shadow-2xl flex flex-col max-h-[92vh] space-y-3">
+          <div class="bg-white rounded-2xl max-w-2xl w-full p-4 shadow-2xl flex flex-col max-h-[92vh] space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                 📷 工作日誌呈報圖片預覽 (${filterDate}) - A4直式高清
@@ -1576,8 +1571,8 @@
               <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 text-sm">✕ 關閉</button>
             </div>
             
-            <div class="flex-1 overflow-auto bg-slate-100 p-2 rounded-xl border border-slate-200 flex items-center justify-center">
-              <img src="${imgDataUrl}" class="max-h-[60vh] w-auto h-auto object-contain rounded shadow border border-slate-300 block mx-auto cursor-pointer" onclick="window.open('${imgDataUrl}')" title="點擊在新視窗檢視大圖">
+            <div class="flex-1 overflow-auto bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-center">
+              <img src="${imgDataUrl}" class="max-h-[65vh] w-auto h-auto object-contain rounded shadow border border-slate-300 block mx-auto cursor-pointer" onclick="window.open('${imgDataUrl}')" title="點擊在新視窗檢視大圖">
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
