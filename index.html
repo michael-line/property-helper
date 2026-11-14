@@ -1251,7 +1251,7 @@
               ${processedList.map(item => `
                 <div class="py-2.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
                   <div class="text-sm leading-relaxed">
-                    <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
+                   
                     ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
                     <!-- 隱藏類別，改為顯示狀態標記內容 -->
                     <span class="text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
