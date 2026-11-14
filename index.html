@@ -1350,8 +1350,23 @@
     }
 
     function exportDailyReportImage() {
-      const dateTag = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
-      captureAndDownloadImage('daily-report-capture-area', `工作日誌與排程呈報_${dateTag}.png`);
+      const filterDate = document.getElementById('ql-filter-date')?.value || new Date().toISOString().split('T')[0];
+      
+      // 1. 自動同步備份一份至「日誌列印」卡片模組內
+      if (typeof renderDailyLogPrintView === 'function') {
+        const printDateInput = document.getElementById('dl-print-date');
+        if (printDateInput) {
+          printDateInput.value = filterDate;
+          renderDailyLogPrintView();
+        }
+      }
+
+      // 2. 彈出預覽確認提示，確認無誤後再真正下載圖片
+      const confirmExport = confirm(`📅 已為您自動同步備份至【日誌列印】卡片內！\n\n是否確認要將 ${filterDate} 的工作日誌與現場圖片正式匯出下載？`);
+      
+      if (confirmExport) {
+        captureAndDownloadImage('daily-report-capture-area', `工作日誌與排程呈報_${filterDate}.png`);
+      }
     }
 
     function renderDailyLogPrintView() {
