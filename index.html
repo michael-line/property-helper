@@ -1348,7 +1348,7 @@
         hiddenBtns.forEach(el => el.classList.remove('hidden'));
       }
     }
-// 🎯 雙端完美適配版：確保手機與電腦皆維持正常直式比例、高畫質預覽與下載
+// 🎯 終極完美版：強制固定 A4 直式寬度（750px）、高畫質渲染、且必定跳出預覽彈窗
     async function exportDailyReportImage() {
       const filterDate = document.getElementById('ql-filter-date')?.value || document.getElementById('dl-print-date')?.value || new Date().toISOString().split('T')[0];
       
@@ -1363,17 +1363,29 @@
       const hiddenEls = targetArea.querySelectorAll('.no-export');
       hiddenEls.forEach(el => el.style.display = 'none');
 
+      // 2. 🎯 關鍵防護：在截圖瞬間強制將容器鎖定為標準 A4 直式固定寬度（750px），確保手機與電腦產出的比例絕對是直式且一致
+      const originalWidth = targetArea.style.width;
+      const originalMaxWidth = targetArea.style.maxWidth;
+      const originalMargin = targetArea.style.margin;
+      const originalBackground = targetArea.style.backgroundColor;
+
+      targetArea.style.width = '750px';
+      targetArea.style.maxWidth = '750px';
+      targetArea.style.margin = '0 auto';
+      targetArea.style.backgroundColor = '#ffffff';
+
       try {
-        // 2. 以標準高畫質渲染 (scale: 2 確保清晰度，且不強行干擾手機視窗寬高，確保直式比例不變形)
+        // 3. 高畫質渲染 (scale: 2 確保文字與照片極度清晰)
         const canvas = await html2canvas(targetArea, { 
           scale: 2, 
           backgroundColor: '#ffffff', 
-          useCORS: true
+          useCORS: true,
+          windowWidth: 750
         });
         
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // 3. 建立或更新高畫質預覽彈窗
+        // 4. 建立或更新高畫質預覽彈窗
         let modal = document.getElementById('report-preview-modal');
         if (!modal) {
           modal = document.createElement('div');
@@ -1396,7 +1408,7 @@
             </div>
 
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-              <span class="text-slate-500">💡 預覽畫面已產生，請確認無誤後點擊下載。</span>
+              <span class="text-slate-500">💡 畫面已鎖定為 A4 直式高清比例，請確認後下載。</span>
               <div class="flex items-center gap-2">
                 <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
                 <button type="button" onclick="confirmDownloadReport('${imgDataUrl}', '${filterDate}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm">
@@ -1412,6 +1424,11 @@
         console.error(err);
         alert('產生呈報圖片失敗，請稍後再試');
       } finally {
+        // 5. 無論成功或失敗，立刻還原網頁原本的尺寸與外觀
+        targetArea.style.width = originalWidth;
+        targetArea.style.maxWidth = originalMaxWidth;
+        targetArea.style.margin = originalMargin;
+        targetArea.style.backgroundColor = originalBackground;
         hiddenEls.forEach(el => el.style.display = '');
       }
     }
