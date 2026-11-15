@@ -1698,26 +1698,51 @@
     }
 
     // ================= 6. 公告園地 =================
-   // 自動尋找最快可用的模型，並將時間放寬至 40 秒、逾時自動換下一個模型
+   // 自動查詢 API Key 支援的最新模型，並關閉思考延遲實現 3~5 秒極速辨識
     async function callGeminiWithFallback(apiKey, parts) {
-      const candidateModels = [
-        'gemini-2.0-flash',
+      let candidateModels = [
+        'gemini-2.5-flash-lite',
         'gemini-2.5-flash',
         'gemini-flash-latest'
       ];
+
+      // 1. 動態向 Google 查詢您 API Key 目前真正支援的所有 Flash 模型（永遠不怕改版失效）
+      try {
+        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const available = (listData.models || [])
+            .filter(m => m.name && m.name.includes('flash') && (m.supportedGenerationMethods || []).includes('generateContent'))
+            .map(m => m.name.replace('models/', ''));
+          if (available.length > 0) {
+            // 優先把最快不卡頓的 lite / flash 模型排在最前面
+            available.sort((a, b) => (b.includes('lite') ? 1 : 0) - (a.includes('lite') ? 1 : 0));
+            candidateModels = [...new Set([...available, ...candidateModels])];
+          }
+        }
+      } catch (e) {}
+
       let lastErrorMsg = '';
 
+      // 2. 依序呼叫可用模型
       for (const modelName of candidateModels) {
         try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 40000); // 放寬至 40 秒
+          const timer = setTimeout(() => controller.abort(), 30000);
+
+          // 針對 2.5 系列關閉預設思考延遲，大幅提升圖片文字提取速度
+          const genConfig = { temperature: 0.1 };
+          if (modelName.includes('2.5')) {
+            genConfig.thinkingConfig = { thinkingBudget: 0 };
+          }
+
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
               contents: [{ parts }],
-              generationConfig: { temperature: 0.2 }
+              generationConfig: genConfig
             })
           });
           clearTimeout(timer);
@@ -1727,15 +1752,15 @@
             return { ok: true, text: data.candidates[0].content.parts[0].text.trim() };
           }
           if (data.error) {
-            lastErrorMsg = data.error.message || '模型呼叫失敗';
-            continue; // 失敗就自動換下一個模型試
+            lastErrorMsg = `[${modelName}] ${data.error.message}`;
+            continue;
           }
         } catch (err) {
-          lastErrorMsg = err.name === 'AbortError' ? 'AI 回應逾時' : (err.message || '網路連線異常');
-          continue; // 逾時也自動換下一個模型試
+          lastErrorMsg = err.name === 'AbortError' ? `[${modelName}] 逾時` : (err.message || '網路異常');
+          continue;
         }
       }
-      return { ok: false, text: `⚠️ AI 暫時無法解析（原因：${lastErrorMsg || '請檢查 API Key'}），但公告圖檔已成功為您建檔保存！` };
+      return { ok: false, text: `⚠️ AI 解析未完成（原因：${lastErrorMsg || '請檢查設定中的 Gemini API Key 是否正確'}），但公告圖檔已成功建檔！` };
     }
 
     async function uploadAndAnalyzeAnnouncement() {
