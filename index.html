@@ -1698,11 +1698,11 @@
     }
 
     // ================= 6. 公告園地 =================
-    // 自動尋找您 API Key 目前支援的可用模型，永不因改版失效
+   // 自動尋找最快可用的模型，並將時間放寬至 40 秒、逾時自動換下一個模型
     async function callGeminiWithFallback(apiKey, parts) {
       const candidateModels = [
-        'gemini-2.5-flash',
         'gemini-2.0-flash',
+        'gemini-2.5-flash',
         'gemini-flash-latest'
       ];
       let lastErrorMsg = '';
@@ -1710,12 +1710,15 @@
       for (const modelName of candidateModels) {
         try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 15000);
+          const timer = setTimeout(() => controller.abort(), 40000); // 放寬至 40 秒
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
-            body: JSON.stringify({ contents: [{ parts }] })
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: { temperature: 0.2 }
+            })
           });
           clearTimeout(timer);
           const data = await res.json();
@@ -1725,15 +1728,11 @@
           }
           if (data.error) {
             lastErrorMsg = data.error.message || '模型呼叫失敗';
-            // 若是模型名稱不存在 (404)，自動換下一個模型測試
-            if (res.status === 404 || lastErrorMsg.includes('not found') || lastErrorMsg.includes('not supported')) {
-              continue;
-            }
-            break;
+            continue; // 失敗就自動換下一個模型試
           }
         } catch (err) {
-          lastErrorMsg = err.name === 'AbortError' ? 'AI 連線逾時 (超過15秒)' : (err.message || '網路連線異常');
-          break;
+          lastErrorMsg = err.name === 'AbortError' ? 'AI 回應逾時' : (err.message || '網路連線異常');
+          continue; // 逾時也自動換下一個模型試
         }
       }
       return { ok: false, text: `⚠️ AI 暫時無法解析（原因：${lastErrorMsg || '請檢查 API Key'}），但公告圖檔已成功為您建檔保存！` };
@@ -1751,18 +1750,20 @@
 
       const btn = document.getElementById('ann-upload-btn');
       btn.disabled = true;
-      btn.innerHTML = '⏳ 正在壓縮圖片並請 AI 辨識文字...';
+      btn.innerHTML = '⏳ 正在壓縮圖片並請 AI 辨識文字 (約需 5~15 秒)...';
 
       try {
-        const photoB64 = await compressImageToBase64(file, 1000, 0.75);
+        // 建檔保存用高清圖 (1000px)，送給 AI 辨識用輕量高速圖 (750px)
+        const photoB64 = await compressImageToBase64(file, 1000, 0.78);
+        const aiPhotoB64 = await compressImageToBase64(file, 750, 0.65);
         let aiSummary = '（尚未設定 Gemini API Key，僅保存圖檔與標題）';
 
         const apiKey = localStorage.getItem('pm_gemini_key');
         if (apiKey) {
-          const base64Data = photoB64.split(',')[1];
+          const base64Data = aiPhotoB64.split(',')[1];
           const result = await callGeminiWithFallback(apiKey, [
             {
-              text: '你是一位專業的社區物業總幹事助手。請仔細辨識並提取這張社區公告圖片中的所有文字內容，並整理成以下格式（繁體中文）：\n【重點摘要】（時間/日期、地點、影響範圍或費用等關鍵資訊）\n【公告完整文字提取】（逐條列出圖片中的主旨、說明與注意事項）'
+              text: '你是一位專業的社區物業總幹事助手。請辨識並提取這張社區公告圖片中的文字內容，整理成以下繁體中文格式：\n【重點摘要】（時間/日期、地點或關鍵提醒）\n【公告完整文字提取】（列出圖片中的主旨與條文內容）'
             },
             {
               inlineData: {
@@ -1786,7 +1787,7 @@
         document.getElementById('ann-title').value = '';
         document.getElementById('ann-image-file').value = '';
         await syncToCloud();
-        alert('✅ 公告圖檔上傳與建檔完成！');
+        alert('✅ 公告圖檔上傳與 AI 解析建檔完成！');
       } catch (err) {
         console.error(err);
         alert('無法處理此檔案：' + (err.message || '請確認選擇的是標準 JPG / PNG 圖片檔'));
