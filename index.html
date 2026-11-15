@@ -1030,17 +1030,23 @@
     }
 
     function compressImageToBase64(file, maxWidth = 650, quality = 0.65) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
+        reader.onerror = () => reject(new Error('檔案讀取失敗'));
         reader.onload = (e) => {
           const img = new Image();
+          img.onerror = () => reject(new Error('不支援此圖片格式（請使用 JPG 或 PNG 圖檔）'));
           img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let w = img.width, h = img.height;
-            if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', quality));
+            try {
+              const canvas = document.createElement('canvas');
+              let w = img.width, h = img.height;
+              if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', quality));
+            } catch (err) {
+              resolve(e.target.result);
+            }
           };
           img.src = e.target.result;
         };
@@ -1692,6 +1698,47 @@
     }
 
     // ================= 6. 公告園地 =================
+    // 自動尋找您 API Key 目前支援的可用模型，永不因改版失效
+    async function callGeminiWithFallback(apiKey, parts) {
+      const candidateModels = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-flash-latest'
+      ];
+      let lastErrorMsg = '';
+
+      for (const modelName of candidateModels) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 15000);
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({ contents: [{ parts }] })
+          });
+          clearTimeout(timer);
+          const data = await res.json();
+
+          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return { ok: true, text: data.candidates[0].content.parts[0].text.trim() };
+          }
+          if (data.error) {
+            lastErrorMsg = data.error.message || '模型呼叫失敗';
+            // 若是模型名稱不存在 (404)，自動換下一個模型測試
+            if (res.status === 404 || lastErrorMsg.includes('not found') || lastErrorMsg.includes('not supported')) {
+              continue;
+            }
+            break;
+          }
+        } catch (err) {
+          lastErrorMsg = err.name === 'AbortError' ? 'AI 連線逾時 (超過15秒)' : (err.message || '網路連線異常');
+          break;
+        }
+      }
+      return { ok: false, text: `⚠️ AI 暫時無法解析（原因：${lastErrorMsg || '請檢查 API Key'}），但公告圖檔已成功為您建檔保存！` };
+    }
+
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -1704,44 +1751,30 @@
 
       const btn = document.getElementById('ann-upload-btn');
       btn.disabled = true;
-      btn.innerHTML = '⏳ AI 正在辨識提取公告文字...';
+      btn.innerHTML = '⏳ 正在壓縮圖片並請 AI 辨識文字...';
 
       try {
-        const photoB64 = await compressImageToBase64(file, 1200, 0.82);
+        const photoB64 = await compressImageToBase64(file, 1000, 0.75);
         let aiSummary = '（尚未設定 Gemini API Key，僅保存圖檔與標題）';
 
         const apiKey = localStorage.getItem('pm_gemini_key');
         if (apiKey) {
           const base64Data = photoB64.split(',')[1];
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  {
-                    text: '你是一位專業的社區物業總幹事助手。請仔細辨識並提取這張社區公告圖片中的所有文字內容，並整理成以下格式（繁體中文）：\n【重點摘要】（時間/日期、地點、影響範圍或費用等關鍵資訊）\n【公告完整文字提取】（逐條列出圖片中的主旨、說明與注意事項）'
-                  },
-                  {
-                    inlineData: {
-                      mimeType: 'image/jpeg',
-                      data: base64Data
-                    }
-                  }
-                ]
-              }]
-            })
-          });
-          const data = await res.json();
-          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            aiSummary = data.candidates[0].content.parts[0].text.trim();
-          } else if (data.error) {
-            aiSummary = `AI 解析失敗：${data.error.message || '請檢查 Gemini API Key 是否正確'}`;
-          } else {
-            aiSummary = 'AI 無法辨識圖片文字，請確認圖片清晰度後重試。';
-          }
+          const result = await callGeminiWithFallback(apiKey, [
+            {
+              text: '你是一位專業的社區物業總幹事助手。請仔細辨識並提取這張社區公告圖片中的所有文字內容，並整理成以下格式（繁體中文）：\n【重點摘要】（時間/日期、地點、影響範圍或費用等關鍵資訊）\n【公告完整文字提取】（逐條列出圖片中的主旨、說明與注意事項）'
+            },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64Data
+              }
+            }
+          ]);
+          aiSummary = result.text;
         }
 
+        if (!Array.isArray(appData.announcements)) appData.announcements = [];
         appData.announcements.unshift({
           id: Date.now(),
           date,
@@ -1753,10 +1786,10 @@
         document.getElementById('ann-title').value = '';
         document.getElementById('ann-image-file').value = '';
         await syncToCloud();
-        alert('公告圖檔已上傳，並完成 AI 文字提取解析！');
+        alert('✅ 公告圖檔上傳與建檔完成！');
       } catch (err) {
         console.error(err);
-        alert('上傳或解析發生錯誤，請檢查網路連線或 API Key 設定。');
+        alert('無法處理此檔案：' + (err.message || '請確認選擇的是標準 JPG / PNG 圖片檔'));
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> 上傳圖檔並請 AI 分析記錄';
