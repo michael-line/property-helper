@@ -1207,9 +1207,7 @@
         return true;
       });
 
-      const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
       const statusLabelMap = { red: '🔴 紅色 (緊急/重要)', blue: '🔵 藍色 (行政/公告)', green: '🟢 綠色 (維保/完成)', purple: '🟣 紫色 (建議/規劃)', default: '⚫ 一般紀錄' };
-      const textMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
       
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
