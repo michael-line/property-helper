@@ -1208,105 +1208,86 @@
       });
 
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
-      // 狀態標記完整名稱對應
-      const statusLabelMap = { 
-        red: '🔴 紅色 (緊急/重要)', 
-        blue: '🔵 藍色 (行政/公告)', 
-        green: '🟢 綠色 (維保/完成)', 
-        purple: '🟣 紫色 (建議/規劃)', 
-        default: '⚫ 一般紀錄' 
-      };
+      const statusLabelMap = { red: '🔴 紅色 (緊急/重要)', blue: '🔵 藍色 (行政/公告)', green: '🟢 綠色 (維保/完成)', purple: '🟣 紫色 (建議/規劃)', default: '⚫ 一般紀錄' };
       const textMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
+      
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
 
-      if (list.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">尚無符合條件的工作日誌或排程，請點擊上方「新增日誌／排程」</p>';
-        return;
+      // 🎯 自動套用全域的字體與相片大小級距
+      let fontSizeClass = 'text-sm';
+      let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
+      let imgMaxHeight = '120px';
+
+      if (typeof currentFontSize !== 'undefined') {
+        if (currentFontSize === 'small') fontSizeClass = 'text-xs';
+        if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
       }
 
-      if (filterDate) {
-        let photoGlobalIndex = 1;
-        const allPhotosToday = [];
-        
-        const processedList = list.map(item => {
-          let itemPhotoTags = '';
-          if (Array.isArray(item.photos) && item.photos.length > 0) {
-            const startIdx = photoGlobalIndex;
-            const endIdx = photoGlobalIndex + item.photos.length - 1;
-            itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
-            
-            item.photos.forEach(src => {
-              allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
-              photoGlobalIndex++;
-            });
-          }
-          return { ...item, itemPhotoTags };
-        });
-
-        // 同步自動備份一份到日誌列印卡片中
-        if (typeof renderDailyLogPrintView === 'function') {
-          setTimeout(() => {
-            const printDateInput = document.getElementById('dl-print-date');
-            if (printDateInput) {
-              printDateInput.value = filterDate;
-              renderDailyLogPrintView();
-            }
-          }, 100);
+      if (typeof currentPhotoSize !== 'undefined') {
+        if (currentPhotoSize === 'small') {
+          photoGridClass = 'grid-cols-4 sm:grid-cols-6';
+          imgMaxHeight = '90px';
+        } else if (currentPhotoSize === 'large') {
+          photoGridClass = 'grid-cols-1 sm:grid-cols-2';
+          imgMaxHeight = '220px';
         }
+      }
 
-        container.innerHTML = `
-          <div class="space-y-3">
-            <!-- 狀態標記置於上方對照 -->
-            <div class="px-2 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span>📅 ${filterDate} 當日工作清單與呈報對照</span>
-              <span class="text-[11px] text-cyan-700 font-mono">共 ${list.length} 筆日誌 / ${allPhotosToday.length} 張現場圖</span>
-            </div>
+      let photoGlobalIndex = 1;
+      const allPhotosToday = [];
 
-            <div class="divide-y divide-slate-100 bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
-              ${processedList.map(item => `
-                <div class="py-2.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
-                  <div class="text-sm leading-relaxed">
-                   
-                    ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
-                    <!-- 隱藏類別，改為顯示狀態標記內容 -->
-                    <span class="text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
-                    <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
-                    <span class="text-xs font-bold text-cyan-700 ml-1">${item.itemPhotoTags}</span>
-                  </div>
-                  <div class="flex items-center gap-1.5 shrink-0 no-export">
-                    <button type="button" onclick="editQuickLogItem(${item.id})" class="text-slate-400 hover:text-blue-600 p-1" title="編輯修改">
-                      <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <button type="button" onclick="deleteWorkLogAndSync(${item.id})" class="text-slate-400 hover:text-rose-500 p-1" title="刪除">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                  </div>
+      const processedList = list.map(item => {
+        let itemPhotoTags = '';
+        if (Array.isArray(item.photos) && item.photos.length > 0) {
+          const startIdx = photoGlobalIndex;
+          const endIdx = photoGlobalIndex + item.photos.length - 1;
+          itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
+          
+          item.photos.forEach(src => {
+            allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
+            photoGlobalIndex++;
+          });
+        }
+        return { ...item, itemPhotoTags };
+      });
+
+      container.innerHTML = `
+        <div id="daily-report-capture-area" class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+          <div class="divide-y divide-slate-100">
+            ${processedList.map(item => `
+              <div class="py-3 flex items-start justify-between gap-2">
+                <div class="${fontSizeClass} leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">
+                  ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
+                  <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
+                  <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
+                  <span class="text-xs font-bold text-cyan-700 ml-1">${item.itemPhotoTags}</span>
                 </div>
-              `).join('')}
-            </div>
-
-            <!-- 當日現場圖片 A4 呈報緊湊預覽（圖片維持原比例 object-contain，不變形） -->
-            ${allPhotosToday.length > 0 ? `
-              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <div class="flex items-center justify-between">
-                  <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> ${filterDate} 當日現場圖片呈報預覽 (${allPhotosToday.length}張)
-                  </p>
-                
-                </div>
-                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 items-start">
-                  ${allPhotosToday.map(p => `
-                    <div class="relative bg-white p-1 rounded-lg border border-slate-200 shadow-2xs">
-                      <img src="${p.src}" class="w-full h-24 sm:h-28 object-contain bg-slate-50 rounded block cursor-zoom-in" onclick="window.open('${p.src}')" title="點擊放大檢視原圖">
-                      <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1 py-0.5 rounded font-mono">${p.label}</span>
-                    </div>
-                  `).join('')}
+                <div class="flex items-center gap-2 shrink-0 no-export">
+                  <button onclick="editWorkLog(${item.id})" class="text-slate-400 hover:text-indigo-600 text-xs">編輯</button>
+                  <button onclick="deleteWorkLogAndSync(${item.id})" class="text-slate-300 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
               </div>
-            ` : ''}
+            `).join('') || '<p class="text-xs text-slate-400 text-center py-6">尚無工作日誌紀錄</p>'}
           </div>
-        `;
+
+          ${allPhotosToday.length > 0 ? `
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 mt-3">
+              <p class="text-xs font-bold text-slate-700">📷 現場圖片呈報總覽 (${allPhotosToday.length}張)</p>
+              <div class="grid ${photoGridClass} gap-2 items-start">
+                ${allPhotosToday.map(p => `
+                  <div class="relative bg-white p-1 rounded border border-slate-200 flex items-center justify-center">
+                    <img src="${p.src}" style="max-height: ${imgMaxHeight}; width: auto; height: auto; object-fit: contain;" class="rounded block mx-auto cursor-pointer" onclick="window.open('${p.src}')">
+                    <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      lucide.createIcons();
+    }
       } else {
         container.innerHTML = list.map(item => {
           const hasPhotos = Array.isArray(item.photos) && item.photos.length > 0;
