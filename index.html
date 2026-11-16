@@ -1211,6 +1211,10 @@
       syncToCloud();
     }
 
+    // 補上字體與相片縮放的全域變數
+    if (typeof currentFontSize === 'undefined') var currentFontSize = 'normal';
+    if (typeof currentPhotoSize === 'undefined') var currentPhotoSize = 'medium';
+
     function renderDashboardWorkLogs() {
       const filterDate = document.getElementById('ql-filter-date')?.value || '';
       const comm = appData.meta.communityName || '小A 物業管理';
@@ -1234,7 +1238,6 @@
         purple: '🟣 建議/規劃', 
         default: '⚫ 一般紀錄' 
       };
-      // 確保顏色確實套用而不被強制覆蓋為黑色
       const textMap = { 
         red: 'text-rose-700 font-medium', 
         blue: 'text-blue-700 font-medium', 
@@ -1250,6 +1253,7 @@
         return;
       }
 
+      // 🎯 動態套用字體與相片級距
       let fontSizeClass = 'text-sm';
       let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
       let imgMaxHeight = '120px';
@@ -1262,9 +1266,12 @@
         if (currentPhotoSize === 'small') {
           photoGridClass = 'grid-cols-4 sm:grid-cols-6';
           imgMaxHeight = '90px';
+        } else if (currentPhotoSize === 'medium') {
+          photoGridClass = 'grid-cols-3 sm:grid-cols-5';
+          imgMaxHeight = '140px';
         } else if (currentPhotoSize === 'large') {
           photoGridClass = 'grid-cols-1 sm:grid-cols-2';
-          imgMaxHeight = '220px';
+          imgMaxHeight = '240px';
         }
       }
 
