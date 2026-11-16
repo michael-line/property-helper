@@ -1216,7 +1216,7 @@
       const comm = appData.meta.communityName || '小A 物業管理';
       const titleEl = document.getElementById('report-header-title');
       const subEl = document.getElementById('report-header-sub');
-      if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程表`;
+      if (titleEl) titleEl.innerText = `${comm} · 主任工作日誌表`;
       if (subEl) subEl.innerText = filterDate ? `報表日期：${filterDate}` : '全部日期總覽';
       
       const list = (appData.workLogs || []).filter(item => {
@@ -1234,7 +1234,14 @@
         purple: '🟣 建議/規劃', 
         default: '⚫ 一般紀錄' 
       };
-      const textMap = { red: 'text-rose-700 font-medium', blue: 'text-blue-700 font-medium', green: 'text-emerald-700 font-medium', purple: 'text-purple-700 font-medium', default: 'text-slate-800' };
+      // 確保顏色確實套用而不被強制覆蓋為黑色
+      const textMap = { 
+        red: 'text-rose-700 font-medium', 
+        blue: 'text-blue-700 font-medium', 
+        green: 'text-emerald-700 font-medium', 
+        purple: 'text-purple-700 font-medium', 
+        default: 'text-slate-800' 
+      };
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
 
@@ -1243,7 +1250,6 @@
         return;
       }
 
-      // 🎯 讀取全域字體與相片大小設定
       let fontSizeClass = 'text-sm';
       let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
       let imgMaxHeight = '120px';
@@ -1292,16 +1298,16 @@
         }
 
         container.innerHTML = `
-          <div class="space-y-3">
-            <div class="px-2 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span>📅 ${filterDate} 當日工作清單與呈報對照</span>
+          <div class="space-y-2">
+            <div class="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>📅 ${filterDate} 當日主任工作清單</span>
               <span class="text-[11px] text-cyan-700 font-mono">共 ${list.length} 筆日誌 / ${allPhotosToday.length} 張現場圖</span>
             </div>
 
             <div class="divide-y divide-slate-100 bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
               ${processedList.map(item => `
-                <div class="py-2.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
-                  <div class="${fontSizeClass} leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">
+                <div class="py-1.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
+                  <div class="${fontSizeClass} leading-snug space-y-0.5" style="word-break: break-all; overflow-wrap: break-word;">
                     ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
                     <span class="text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium">${statusLabelMap[item.color] || statusLabelMap.default}</span>
                     <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
@@ -1321,16 +1327,14 @@
 
             ${allPhotosToday.length > 0 ? `
               <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <div class="flex items-center justify-between">
-                  <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> ${filterDate} 當日現場圖片呈報預覽 (${allPhotosToday.length}張)
-                  </p>
-                </div>
+                <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i data-lucide="image" class="w-4 h-4 text-cyan-600"></i> 當日現場圖片呈報預覽 (${allPhotosToday.length}張)
+                </p>
                 <div class="grid ${photoGridClass} gap-2 items-start">
                   ${allPhotosToday.map(p => `
-                    <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 shadow-2xs flex items-center justify-center">
+                    <div class="bg-white p-1.5 rounded-lg border border-slate-200 shadow-2xs flex flex-col items-center justify-between gap-1">
                       <img src="${p.src}" style="max-height: ${imgMaxHeight}; width: auto; height: auto; object-fit: contain;" class="bg-slate-50 rounded block mx-auto cursor-zoom-in" onclick="window.open('${p.src}')" title="點擊放大檢視原圖">
-                      <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
+                      <span class="bg-white text-slate-800 border border-slate-300 text-[10px] px-2 py-0.5 rounded-md font-mono font-bold shadow-2xs w-full text-center">${p.label}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -1342,9 +1346,9 @@
         container.innerHTML = list.map(item => {
           const hasPhotos = Array.isArray(item.photos) && item.photos.length > 0;
           return `
-            <div class="py-3 space-y-2.5 border-b border-slate-100 last:border-b-0">
+            <div class="py-2 space-y-2 border-b border-slate-100 last:border-b-0">
               <div class="flex items-start justify-between gap-2">
-                <div class="${fontSizeClass} leading-relaxed" style="word-break: break-all; overflow-wrap: break-word;">
+                <div class="${fontSizeClass} leading-snug space-y-0.5" style="word-break: break-all; overflow-wrap: break-word;">
                   <span class="mr-1">${dotMap[item.color] || '⚫'}</span>
                   ${item.isStarEvent ? '<span class="text-amber-500 mr-1" title="已同步至大事紀要">⭐</span>' : ''}
                   <span class="text-xs font-mono text-slate-400 mr-1.5">${item.date}</span>
@@ -1363,9 +1367,9 @@
               ${hasPhotos ? `
                 <div class="grid ${photoGridClass} gap-2 items-start">
                   ${item.photos.map((src, idx) => `
-                    <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
+                    <div class="bg-white p-1.5 rounded-lg border border-slate-200 flex flex-col items-center justify-between gap-1">
                       <img src="${src}" style="max-height: ${imgMaxHeight}; width: auto; height: auto; object-fit: contain;" class="bg-slate-50 rounded cursor-zoom-in block mx-auto" onclick="window.open('${src}')">
-                      <span class="absolute bottom-1 right-1 bg-slate-900/70 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">圖 ${idx + 1}</span>
+                      <span class="bg-white text-slate-800 border border-slate-300 text-[10px] px-2 py-0.5 rounded-md font-mono font-bold shadow-2xs w-full text-center">圖 ${idx + 1}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -1378,64 +1382,6 @@
       lucide.createIcons();
     }
 
-    async function captureAndDownloadImage(elementId, filename) {
-      const target = document.getElementById(elementId);
-      if (!target) return;
-      const hiddenBtns = target.querySelectorAll('.no-export');
-      hiddenBtns.forEach(el => el.classList.add('hidden'));
-      try {
-        const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } catch (e) {
-        alert('匯出圖片失敗，請稍後再試');
-      } finally {
-        hiddenBtns.forEach(el => el.classList.remove('hidden'));
-      }
-    }
-// 🌟 最終修復版：完美掌控按鈕高亮、字體與相片尺寸縮放、以及高清預覽彈窗
-    let currentFontSize = 'normal'; // 可選: small, normal, large
-    let currentPhotoSize = 'medium'; // 可選: small, medium, large
-
-    // 切換字體大小並即時切換首頁與列印頁按鈕顏色
-    function changeLogFontSize(size) {
-      currentFontSize = size;
-      ['small', 'normal', 'large'].forEach(s => {
-        ['font-btn-', 'dash-font-btn-'].forEach(prefix => {
-          const btn = document.getElementById(`${prefix}${s}`);
-          if (!btn) return;
-          if (s === size) {
-            btn.className = "px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs";
-          } else {
-            btn.className = "px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100";
-          }
-        });
-      });
-      renderDailyLogPrintView();
-      renderDashboardWorkLogs();
-    }
-
-    // 切換相片尺寸並即時切換首頁與列印頁按鈕顏色
-    function changeLogPhotoSize(size) {
-      currentPhotoSize = size;
-      ['small', 'medium', 'large'].forEach(s => {
-        ['photo-btn-', 'dash-photo-btn-'].forEach(prefix => {
-          const btn = document.getElementById(`${prefix}${s}`);
-          if (!btn) return;
-          if (s === size) {
-            btn.className = "px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs";
-          } else {
-            btn.className = "px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100";
-          }
-        });
-      });
-      renderDailyLogPrintView();
-      renderDashboardWorkLogs();
-    }
-
-    // 🎯 核心繪製與 A4 自動分頁渲染（嚴格套用動態字體與相片尺寸）
     function renderDailyLogPrintView() {
       const quickDateEl = document.getElementById('ql-filter-date');
       const printDateInput = document.getElementById('dl-print-date');
@@ -1449,7 +1395,7 @@
       const comm = appData.meta.communityName || '最上境大廈管委會';
       const titleEl = document.getElementById('dl-print-title');
       const subEl = document.getElementById('dl-print-subtitle');
-      if (titleEl) titleEl.innerText = `${comm} · 工作日誌與排程呈報表`;
+      if (titleEl) titleEl.innerText = `${comm} · 主任工作日誌表`;
       if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
       
       const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
@@ -1463,6 +1409,13 @@
         green: '🟢 綠色 (維保/完成)', 
         purple: '🟣 紫色 (建議/規劃)', 
         default: '⚫ 一般紀錄' 
+      };
+      const textMap = { 
+        red: 'text-rose-700 font-medium', 
+        blue: 'text-blue-700 font-medium', 
+        green: 'text-emerald-700 font-medium', 
+        purple: 'text-purple-700 font-medium', 
+        default: 'text-slate-800' 
       };
 
       let photoGlobalIndex = 1;
@@ -1483,7 +1436,7 @@
         return { ...item, itemPhotoTags };
       });
 
-      const pageSize = 5; 
+      const pageSize = 6; 
       const totalPages = Math.max(1, Math.ceil(processedList.length / pageSize));
 
       const container = document.getElementById('dl-print-list');
@@ -1510,19 +1463,19 @@
         const isLastPage = (page === totalPages - 1);
 
         pagesHtml += `
-          <div class="a4-page-box bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 relative space-y-4" style="page-break-after: always; break-after: page;">
+          <div class="a4-page-box bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 relative space-y-3" style="page-break-after: always; break-after: page;">
             <div class="flex justify-between items-center border-b pb-2 text-xs text-slate-400">
-              <span>${comm} - 工作日誌</span>
+              <span>${comm} - 主任工作日誌表</span>
               <span>第 ${page + 1} 頁 / 共 ${totalPages} 頁</span>
             </div>
 
-            <div class="divide-y divide-slate-200" style="word-break: break-all; overflow-wrap: break-word;">
+            <div class="divide-y divide-slate-200 space-y-1.5" style="word-break: break-all; overflow-wrap: break-word;">
               ${pageItems.map(item => `
-                <div class="py-3 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
-                  <div class="${fontSizeClass} leading-relaxed" style="word-break: break-all; overflow-wrap: break-word; max-width: 100%;">
+                <div class="py-1.5 flex items-start justify-between gap-2 first:pt-0 last:pb-0">
+                  <div class="${fontSizeClass} leading-snug space-y-0.5" style="word-break: break-all; overflow-wrap: break-word; max-width: 100%;">
                     ${item.isStarEvent ? '<span class="text-amber-500 mr-1">⭐</span>' : ''}
                     <span class="text-xs bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded mr-1.5 font-medium shrink-0">${statusLabelMap[item.color] || statusLabelMap.default}</span>
-                    <span class="text-slate-800 whitespace-pre-line">${item.content}</span>
+                    <span class="${textMap[item.color] || 'text-slate-800'} whitespace-pre-line">${item.content}</span>
                     <span class="text-xs font-bold text-cyan-700 ml-1 shrink-0">${item.itemPhotoTags}</span>
                   </div>
                 </div>
@@ -1530,13 +1483,13 @@
             </div>
 
             ${isLastPage && allPhotosToday.length > 0 ? `
-              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-4">
-                <p class="text-xs font-bold text-slate-700">📷 ${filterDate} 現場圖片呈報總覽 (${allPhotosToday.length}張)</p>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-3">
+                <p class="text-xs font-bold text-slate-700">📷 現場圖片呈報總覽 (${allPhotosToday.length}張)</p>
                 <div class="grid ${photoGridClass} gap-2 items-start">
                   ${allPhotosToday.map(p => `
-                    <div class="relative bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
+                    <div class="bg-white p-1.5 rounded-lg border border-slate-200 flex flex-col items-center justify-between gap-1">
                       <img src="${p.src}" style="max-height: ${imgMaxHeight}; width: auto; height: auto; object-fit: contain;" class="rounded block mx-auto">
-                      <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">${p.label}</span>
+                      <span class="bg-white text-slate-800 border border-slate-300 text-[10px] px-2 py-0.5 rounded-md font-mono font-bold shadow-2xs w-full text-center">${p.label}</span>
                     </div>
                   `).join('')}
                 </div>
