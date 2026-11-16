@@ -334,10 +334,10 @@
           <input type="text" id="event-search" oninput="renderEventsList()" placeholder="搜尋大事紀要內容..." class="flex-1 min-w-[200px] border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
           <div class="flex flex-wrap items-center gap-1.5 text-xs">
             <button onclick="setEventColorFilter('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-full bg-slate-800 text-white font-medium">全部</button>
-            <button onclick="setEventColorFilter('red')" id="filter-btn-red" class="px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">🔴 紅色</button>
-            <button onclick="setEventColorFilter('blue')" id="filter-btn-blue" class="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">🔵 藍色</button>
-            <button onclick="setEventColorFilter('green')" id="filter-btn-green" class="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 綠色</button>
-            <button onclick="setEventColorFilter('purple')" id="filter-btn-purple" class="px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">🟣 紫色</button>
+            <button onclick="setEventColorFilter('red')" id="filter-btn-red" class="px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">🔴 </button>
+            <button onclick="setEventColorFilter('blue')" id="filter-btn-blue" class="px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">🔵 </button>
+            <button onclick="setEventColorFilter('green')" id="filter-btn-green" class="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 </button>
+            <button onclick="setEventColorFilter('purple')" id="filter-btn-purple" class="px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">🟣 </button>
           </div>
         </div>
 
@@ -1463,10 +1463,10 @@
       if (badge) badge.innerText = `共 ${list.length} 筆`;
 
       const statusLabelMap = { 
-        red: '🔴 紅色 (緊急/重要)', 
-        blue: '🔵 藍色 (行政/公告)', 
-        green: '🟢 綠色 (維保/完成)', 
-        purple: '🟣 紫色 (建議/規劃)', 
+        red: '🔴 緊急/重要', 
+        blue: '🔵 行政/公告', 
+        green: '🟢 維修/保養', 
+        purple: '🟣 建議/規劃', 
         default: '⚫ 一般紀錄' 
       };
       const textMap = { 
