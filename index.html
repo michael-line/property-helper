@@ -293,7 +293,6 @@
         </button>
       </div>
     </section>
-
     <!-- ================= 2. 大事紀要 ================= -->
     <section id="view-events" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
@@ -580,7 +579,6 @@
         </div>
       </div>
     </section>
-
     <!-- ================= 8. 房屋出售/出租帶看門禁管制 ================= -->
     <section id="view-housing" class="hidden space-y-4">
       <div class="paper-card p-5">
@@ -1052,6 +1050,7 @@
         reader.readAsDataURL(file);
       });
     }
+
     // ================= 4. 首頁主區塊：工作日誌與排程 =================
     function openNewQuickLogForm() {
       editingWorkLogId = null;
@@ -1833,7 +1832,7 @@
       `).join('') || '<p class="text-xs text-slate-400 col-span-2 text-center py-8">尚無公告圖檔紀錄，請由上方選擇圖檔並點選 AI 分析記錄</p>';
       lucide.createIcons();
     }
-    // ================= 7. 社區規範、函文圖資、住戶、售屋、報修、裝潢廠商 =================
+   // ================= 7. 社區規範、函文圖資、住戶、售屋、報修、裝潢廠商 =================
     async function uploadRegulation() {
       const title = document.getElementById('reg-title').value.trim();
       const note = document.getElementById('reg-note').value.trim();
@@ -2027,9 +2026,11 @@
         dispatchDate: '',
         dispatchVendor: '',
         dispatchNote: '',
+        dispatchPhoto: '',
         acceptDate: '',
         acceptBy: '',
-        acceptNote: ''
+        acceptNote: '',
+        acceptPhoto: ''
       });
       document.getElementById('rep-loc').value = '';
       document.getElementById('rep-desc').value = '';
@@ -2045,6 +2046,30 @@
         item.status = stages[nextIdx];
         syncToCloud();
       }
+    }
+
+    async function handleRepairStagePhoto(event, id, stage) {
+      const file = event.target.files?.[0];
+      const item = appData.repairs.find(r => r.id === id);
+      if (!file || !item) return;
+
+      try {
+        const b64 = await compressImageToBase64(file, 750, 0.7);
+        if (stage === 'dispatch') item.dispatchPhoto = b64;
+        else if (stage === 'accept') item.acceptPhoto = b64;
+        event.target.value = '';
+        await syncToCloud();
+      } catch (err) {
+        alert('相片處理失敗：' + (err.message || '請選擇標準圖片檔'));
+      }
+    }
+
+    async function removeRepairStagePhoto(id, stage) {
+      const item = appData.repairs.find(r => r.id === id);
+      if (!item) return;
+      if (stage === 'dispatch') item.dispatchPhoto = '';
+      if (stage === 'accept') item.acceptPhoto = '';
+      await syncToCloud();
     }
 
     function saveRepairDispatch(id, markAsDispatched = false) {
@@ -2089,12 +2114,18 @@
           .replace(/"/g, '&quot;');
 
       const commName = appData.meta?.communityName || '小A 社區物業管理';
-      const photoSection = item.photo
-        ? `<div style="margin-top:14px;">
-             <div style="font-weight:bold;margin-bottom:6px;font-size:14px;">現場報修照片</div>
-             <img src="${item.photo}" alt="報修照片" style="max-width:360px;max-height:260px;height:auto;border:1px solid #cbd5e1;border-radius:4px;display:block;" />
+      const renderPhotoBlock = (title, src) => src
+        ? `<div style="margin-top:12px;">
+             <div style="font-weight:bold;margin-bottom:4px;font-size:13px;">${escapeHtml(title)}</div>
+             <img src="${src}" alt="${escapeHtml(title)}" style="max-width:320px;max-height:220px;height:auto;border:1px solid #cbd5e1;border-radius:4px;display:block;" />
            </div>`
         : '';
+
+      const photosHtml = [
+        renderPhotoBlock('現場報修照片', item.photo),
+        renderPhotoBlock('派工／施工照片', item.dispatchPhoto),
+        renderPhotoBlock('驗收／完工照片', item.acceptPhoto)
+      ].filter(Boolean).join('');
 
       const htmlDoc = `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -2147,6 +2178,12 @@
       width: 145px;
       background: #f1f5f9;
       font-weight: 700;
+    }
+    .photo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 8px;
     }
     .sign-row {
       display: grid;
@@ -2222,7 +2259,7 @@
         <td colspan="3">${escapeHtml(item.acceptNote || '-')}</td>
       </tr>
     </table>
-    ${photoSection}
+    ${photosHtml ? `<div class="photo-grid">${photosHtml}</div>` : ''}
     <div class="sign-row">
       <div class="sign-line">報修人／住戶簽章：</div>
       <div class="sign-line">承攬廠商簽章：</div>
@@ -2446,7 +2483,11 @@
                 <label class="block text-slate-500 mb-1">派工說明</label>
                 <input type="text" id="rep-dispatch-note-${r.id}" value="${r.dispatchNote || ''}" placeholder="填寫派工內容、預計進場時間或備註" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
               </div>
-              <div class="flex flex-wrap gap-2 pt-0.5">
+              <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                <label class="cursor-pointer text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium">
+                  📷 上傳派工相片
+                  <input type="file" accept="image/*" onchange="handleRepairStagePhoto(event, ${r.id}, 'dispatch')" class="hidden">
+                </label>
                 <button type="button" onclick="saveRepairDispatch(${r.id}, false)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium">
                   儲存派工資料
                 </button>
@@ -2454,6 +2495,12 @@
                   標記「已派工施工中」並儲存
                 </button>
               </div>
+              ${r.dispatchPhoto ? `
+                <div class="relative inline-block pt-1">
+                  <img src="${r.dispatchPhoto}" onclick="window.open('${r.dispatchPhoto}')" class="max-h-36 w-auto h-auto rounded-lg border border-slate-300 bg-white cursor-zoom-in block" title="點擊查看原圖">
+                  <button type="button" onclick="removeRepairStagePhoto(${r.id}, 'dispatch')" class="mt-1 text-[11px] text-rose-600 hover:underline block">移除派工相片</button>
+                </div>
+              ` : ''}
             </div>
 
             <!-- 已驗收階段輸入區 -->
@@ -2473,7 +2520,11 @@
                 <label class="block text-slate-500 mb-1">處理結果與驗收備註</label>
                 <input type="text" id="rep-accept-note-${r.id}" value="${r.acceptNote || ''}" placeholder="填寫修繕完成情形、更換零件或費用說明" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
               </div>
-              <div class="flex flex-wrap gap-2 pt-0.5">
+              <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                <label class="cursor-pointer text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium">
+                  📷 上傳處理結果相片
+                  <input type="file" accept="image/*" onchange="handleRepairStagePhoto(event, ${r.id}, 'accept')" class="hidden">
+                </label>
                 <button type="button" onclick="saveRepairAcceptance(${r.id}, false)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium">
                   儲存驗收資料
                 </button>
@@ -2481,6 +2532,12 @@
                   確認「已驗收結案」
                 </button>
               </div>
+              ${r.acceptPhoto ? `
+                <div class="relative inline-block pt-1">
+                  <img src="${r.acceptPhoto}" onclick="window.open('${r.acceptPhoto}')" class="max-h-36 w-auto h-auto rounded-lg border border-slate-300 bg-white cursor-zoom-in block" title="點擊查看原圖">
+                  <button type="button" onclick="removeRepairStagePhoto(${r.id}, 'accept')" class="mt-1 text-[11px] text-rose-600 hover:underline block">移除處理結果相片</button>
+                </div>
+              ` : ''}
             </div>
 
             <!-- 匯出 HTML 列印檔 -->
@@ -2620,4 +2677,4 @@
     }
   </script>
 </body>
-</html>
+</html> 
