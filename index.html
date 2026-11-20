@@ -163,7 +163,6 @@
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2" id="module-cards-grid"></div>
       </div>
-
       <!-- 主工作區塊：工作日誌與排程 -->
       <div class="paper-card p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -255,7 +254,8 @@
             <button type="button" onclick="setQuickColorFilter('star')" id="ql-f-star" class="px-2 py-0.5 rounded bg-amber-50 text-amber-700">⭐</button>
           </div>
         </div>
-<!-- 首頁專屬：字體與相片大小手動微調控制列 -->
+
+        <!-- 首頁專屬：字體與相片大小手動微調控制列 -->
         <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 no-print">
           <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
             <span>🔤 字體：</span>
@@ -270,14 +270,14 @@
             <button type="button" id="dash-photo-btn-large" onclick="changeLogPhotoSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大圖</button>
           </div>
         </div>
-        <!-- 可匯出成圖片的呈報內容容器（上方已有日期，內部明細不重複列日期） -->
+
+        <!-- 可匯出成圖片的呈報內容容器 -->
         <div id="daily-report-capture-area" class="bg-white rounded-xl border border-slate-200 p-4 space-y-2.5">
           <div class="flex items-center justify-between border-b border-slate-200 pb-2.5">
             <div>
               <h4 class="font-bold text-slate-900 text-base" id="report-header-title">物業服務工作日誌與排程表</h4>
               <p class="text-xs text-slate-600 font-medium mt-0.5" id="report-header-sub"></p>
             </div>
-      
           </div>
           <div id="dash-worklogs-list" class="divide-y divide-slate-100"></div>
         </div>
@@ -293,7 +293,8 @@
         </button>
       </div>
     </section>
-    <!-- ================= 2. 大事紀要（取消新增、支援連同圖片同步、自訂日期區間與含圖匯出） ================= -->
+
+    <!-- ================= 2. 大事紀要 ================= -->
     <section id="view-events" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -379,7 +380,6 @@
         <iframe id="reg-preview-frame" class="w-full h-[600px] rounded-lg border border-slate-200" src=""></iframe>
       </div>
     </section>
-
     <!-- ================= 4. 公告園地（上傳公告圖檔 + AI 自動辨識分析內容並記錄） ================= -->
     <section id="view-announcements" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
@@ -476,8 +476,8 @@
         <div id="legal-print-area" class="lg:col-span-7 space-y-6"></div>
       </div>
     </section>
-    <!-- ================= 6. 日誌列印（依日期讀取首頁紀錄、支援刪除與再次輸出） ================= -->
- 
+
+    <!-- ================= 6. 日誌列印 ================= -->
     <section id="view-dailylog" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 no-print">
@@ -495,21 +495,23 @@
             </button>
           </div>
         </div>
-<!-- 字體與相片大小手動微調控制列 -->
-  <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 mb-3 no-print">
-    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-      <span>🔤 字體：</span>
-      <button type="button" id="font-btn-small" onclick="changeLogFontSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小</button>
-      <button type="button" id="font-btn-normal" onclick="changeLogFontSize('normal')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">標準</button>
-      <button type="button" id="font-btn-large" onclick="changeLogFontSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大</button>
-    </div>
-    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-      <span>🖼️ 相片：</span>
-      <button type="button" id="photo-btn-small" onclick="changeLogPhotoSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小圖</button>
-      <button type="button" id="photo-btn-medium" onclick="changeLogPhotoSize('medium')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">中圖</button>
-      <button type="button" id="photo-btn-large" onclick="changeLogPhotoSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大圖</button>
-    </div>
-  </div>
+
+        <!-- 字體與相片大小手動微調控制列 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 mb-3 no-print">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <span>🔤 字體：</span>
+            <button type="button" id="font-btn-small" onclick="changeLogFontSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小</button>
+            <button type="button" id="font-btn-normal" onclick="changeLogFontSize('normal')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">標準</button>
+            <button type="button" id="font-btn-large" onclick="changeLogFontSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大</button>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <span>🖼️ 相片：</span>
+            <button type="button" id="photo-btn-small" onclick="changeLogPhotoSize('small')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">小圖</button>
+            <button type="button" id="photo-btn-medium" onclick="changeLogPhotoSize('medium')" class="px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs">中圖</button>
+            <button type="button" id="photo-btn-large" onclick="changeLogPhotoSize('large')" class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100">大圖</button>
+          </div>
+        </div>
+
         <!-- 日期選擇列 -->
         <div class="flex flex-wrap items-center gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200 no-print">
           <span class="font-bold text-slate-700">選擇列印日期：</span>
@@ -627,7 +629,7 @@
           <input type="file" id="rep-photo" accept="image/*" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-slate-50">
           <button onclick="addRepair()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium">開立報修單</button>
         </div>
-        <div id="repairs-list" class="space-y-2"></div>
+        <div id="repairs-list" class="space-y-3"></div>
       </div>
     </section>
 
@@ -661,8 +663,7 @@
         <div id="vendors-list" class="space-y-2"></div>
       </div>
     </section>
-
-  </main>
+    </main>
 
   <!-- 設定 Modal -->
   <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
@@ -724,6 +725,7 @@
       </div>
     </div>
   </div>
+
   <script>
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
@@ -886,7 +888,6 @@
 
       appData.dailyLogs.forEach(oldLog => {
         const legacyId = oldLog.id || Date.now();
-        // 避免重複轉換
         if (appData.workLogs.some(w => w.id === legacyId || w.legacyDailyLogId === legacyId)) return;
 
         const metaParts = [];
@@ -908,7 +909,6 @@
           photos: Array.isArray(oldLog.photos) ? [...oldLog.photos] : []
         });
       });
-      // 依日期由新到舊排序
       appData.workLogs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     }
 
@@ -963,9 +963,8 @@
       updateSyncUI('synced', '已建立雲端資料庫');
     }
 
-   async function syncToCloud() {
-      // 🛡️ 雲端防覆蓋保護網：若本機資料完全為空，絕對禁止覆蓋雲端
-      if (!appData || (!appData.logs && !appData.residents && !appData.houses)) {
+    async function syncToCloud() {
+      if (!appData || (!appData.workLogs && !appData.residents && !appData.housing && !appData.repairs)) {
         console.warn("⚠️ 偵測到本機資料結構異常為空，為保護雲端歷史資料，已攔截此次同步！");
         return false;
       }
@@ -1053,8 +1052,7 @@
         reader.readAsDataURL(file);
       });
     }
-
-    // ================= 4. 首頁主區塊：工作日誌與排程（保持相片原始比例 + 累加圖片 + 編輯） =================
+    // ================= 4. 首頁主區塊：工作日誌與排程 =================
     function openNewQuickLogForm() {
       editingWorkLogId = null;
       document.getElementById('ql-form-title').innerText = '➕ 新增工作日誌／排程';
@@ -1115,7 +1113,10 @@
       event.target.value = '';
       renderQuickPhotoPreview();
     }
-// 🔤 控制日誌字體大小切換
+
+    if (typeof currentFontSize === 'undefined') var currentFontSize = 'normal';
+    if (typeof currentPhotoSize === 'undefined') var currentPhotoSize = 'medium';
+
     function changeLogFontSize(size) {
       currentFontSize = size;
       ['small', 'normal', 'large'].forEach(s => {
@@ -1133,7 +1134,6 @@
       renderDashboardWorkLogs();
     }
 
-    // 🖼️ 控制現場相片大小切換
     function changeLogPhotoSize(size) {
       currentPhotoSize = size;
       ['small', 'medium', 'large'].forEach(s => {
@@ -1151,29 +1151,11 @@
       renderDashboardWorkLogs();
     }
 
-    // 🖼️ 控制現場相片大小切換
-    function changeLogPhotoSize(size) {
-      currentPhotoSize = size;
-      ['small', 'medium', 'large'].forEach(s => {
-        ['photo-btn-', 'dash-photo-btn-'].forEach(prefix => {
-          const btn = document.getElementById(`${prefix}${s}`);
-          if (!btn) return;
-          if (s === size) {
-            btn.className = "px-2.5 py-1 bg-indigo-600 text-white border border-indigo-600 rounded text-xs font-bold shadow-xs";
-          } else {
-            btn.className = "px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded text-xs hover:bg-slate-100";
-          }
-        });
-      });
-      if (typeof renderDailyLogPrintView === 'function') renderDailyLogPrintView();
-      renderDashboardWorkLogs();
-    }
     function removeTempQuickPhoto(idx) {
       tempQuickPhotos.splice(idx, 1);
       renderQuickPhotoPreview();
     }
 
-    // 縮圖預覽：採用 w-full h-auto 保持相片完整原比例，不裁切不拉伸
     function renderQuickPhotoPreview() {
       const hint = document.getElementById('ql-photo-count-hint');
       if (hint) hint.innerText = `已選 ${tempQuickPhotos.length} / 4 張圖片`;
@@ -1231,7 +1213,6 @@
         appData.workLogs.unshift(payload);
       }
 
-      // 同步處理「大事紀要（連同圖片一起複製貼過去）」
       const linkedEventIdx = appData.events.findIndex(ev => ev.sourceWorkLogId === targetId);
       if (isStarEvent) {
         const eventPayload = {
@@ -1263,10 +1244,6 @@
       syncToCloud();
     }
 
-    // 補上字體與相片縮放的全域變數
-    if (typeof currentFontSize === 'undefined') var currentFontSize = 'normal';
-    if (typeof currentPhotoSize === 'undefined') var currentPhotoSize = 'medium';
-
     function renderDashboardWorkLogs() {
       const filterDate = document.getElementById('ql-filter-date')?.value || '';
       const comm = appData.meta.communityName || '小A 物業管理';
@@ -1274,7 +1251,7 @@
       const subEl = document.getElementById('report-header-sub');
       if (titleEl) titleEl.innerText = `${comm} · 主任工作日誌表`;
       if (subEl) subEl.innerText = filterDate ? `報表日期：${filterDate}` : '全部日期總覽';
-      
+
       const list = (appData.workLogs || []).filter(item => {
         if (filterDate && item.date !== filterDate) return false;
         if (quickColorFilter === 'star') return !!item.isStarEvent;
@@ -1283,19 +1260,19 @@
       });
 
       const dotMap = { red: '🔴', blue: '🔵', green: '🟢', purple: '🟣', default: '⚫' };
-      const statusLabelMap = { 
-        red: '🔴 緊急/重要', 
-        blue: '🔵 行政/公告', 
-        green: '🟢 維修/保養', 
-        purple: '🟣 建議/規劃', 
-        default: '⚫ 一般紀錄' 
+      const statusLabelMap = {
+        red: '🔴 緊急/重要',
+        blue: '🔵 行政/公告',
+        green: '🟢 維修/保養',
+        purple: '🟣 建議/規劃',
+        default: '⚫ 一般紀錄'
       };
-      const textMap = { 
-        red: 'text-rose-700 font-medium', 
-        blue: 'text-blue-700 font-medium', 
-        green: 'text-emerald-700 font-medium', 
-        purple: 'text-purple-700 font-medium', 
-        default: 'text-slate-800' 
+      const textMap = {
+        red: 'text-rose-700 font-medium',
+        blue: 'text-blue-700 font-medium',
+        green: 'text-emerald-700 font-medium',
+        purple: 'text-purple-700 font-medium',
+        default: 'text-slate-800'
       };
       const container = document.getElementById('dash-worklogs-list');
       if (!container) return;
@@ -1305,39 +1282,35 @@
         return;
       }
 
-      // 🎯 動態套用字體與相片級距
       let fontSizeClass = 'text-sm';
       let photoGridClass = 'grid-cols-3 sm:grid-cols-5';
       let imgMaxHeight = '120px';
 
-      if (typeof currentFontSize !== 'undefined') {
-        if (currentFontSize === 'small') fontSizeClass = 'text-xs';
-        if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
-      }
-      if (typeof currentPhotoSize !== 'undefined') {
-        if (currentPhotoSize === 'small') {
-          photoGridClass = 'grid-cols-4 sm:grid-cols-6';
-          imgMaxHeight = '90px';
-        } else if (currentPhotoSize === 'medium') {
-          photoGridClass = 'grid-cols-3 sm:grid-cols-5';
-          imgMaxHeight = '140px';
-        } else if (currentPhotoSize === 'large') {
-          photoGridClass = 'grid-cols-1 sm:grid-cols-2';
-          imgMaxHeight = '240px';
-        }
+      if (currentFontSize === 'small') fontSizeClass = 'text-xs';
+      if (currentFontSize === 'large') fontSizeClass = 'text-base font-medium';
+
+      if (currentPhotoSize === 'small') {
+        photoGridClass = 'grid-cols-4 sm:grid-cols-6';
+        imgMaxHeight = '90px';
+      } else if (currentPhotoSize === 'medium') {
+        photoGridClass = 'grid-cols-3 sm:grid-cols-5';
+        imgMaxHeight = '140px';
+      } else if (currentPhotoSize === 'large') {
+        photoGridClass = 'grid-cols-1 sm:grid-cols-2';
+        imgMaxHeight = '240px';
       }
 
       if (filterDate) {
         let photoGlobalIndex = 1;
         const allPhotosToday = [];
-        
+
         const processedList = list.map(item => {
           let itemPhotoTags = '';
           if (Array.isArray(item.photos) && item.photos.length > 0) {
             const startIdx = photoGlobalIndex;
             const endIdx = photoGlobalIndex + item.photos.length - 1;
             itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
-            
+
             item.photos.forEach(src => {
               allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
               photoGlobalIndex++;
@@ -1437,14 +1410,14 @@
           `;
         }).join('');
       }
-      
+
       lucide.createIcons();
     }
 
     function renderDailyLogPrintView() {
       const quickDateEl = document.getElementById('ql-filter-date');
       const printDateInput = document.getElementById('dl-print-date');
-      
+
       let filterDate = printDateInput?.value || quickDateEl?.value || '';
       if (printDateInput && !printDateInput.value && quickDateEl) {
         printDateInput.value = quickDateEl.value;
@@ -1456,25 +1429,25 @@
       const subEl = document.getElementById('dl-print-subtitle');
       if (titleEl) titleEl.innerText = `${comm} · 主任工作日誌表`;
       if (subEl) subEl.innerText = filterDate ? `日期：${filterDate}` : '全部日期紀錄';
-      
+
       const list = (appData.workLogs || []).filter(item => !filterDate || item.date === filterDate);
-      
+
       const badge = document.getElementById('dailylog-total-badge');
       if (badge) badge.innerText = `共 ${list.length} 筆`;
 
-      const statusLabelMap = { 
-        red: '🔴 緊急/重要', 
-        blue: '🔵 行政/公告', 
-        green: '🟢 維修/保養', 
-        purple: '🟣 建議/規劃', 
-        default: '⚫ 一般紀錄' 
+      const statusLabelMap = {
+        red: '🔴 緊急/重要',
+        blue: '🔵 行政/公告',
+        green: '🟢 維修/保養',
+        purple: '🟣 建議/規劃',
+        default: '⚫ 一般紀錄'
       };
-      const textMap = { 
-        red: 'text-rose-700 font-medium', 
-        blue: 'text-blue-700 font-medium', 
-        green: 'text-emerald-700 font-medium', 
-        purple: 'text-purple-700 font-medium', 
-        default: 'text-slate-800' 
+      const textMap = {
+        red: 'text-rose-700 font-medium',
+        blue: 'text-blue-700 font-medium',
+        green: 'text-emerald-700 font-medium',
+        purple: 'text-purple-700 font-medium',
+        default: 'text-slate-800'
       };
 
       let photoGlobalIndex = 1;
@@ -1486,7 +1459,7 @@
           const startIdx = photoGlobalIndex;
           const endIdx = photoGlobalIndex + item.photos.length - 1;
           itemPhotoTags = startIdx === endIdx ? ` [圖 ${startIdx}]` : ` [圖 ${startIdx}~${endIdx}]`;
-          
+
           item.photos.forEach(src => {
             allPhotosToday.push({ src, label: `圖 ${photoGlobalIndex}` });
             photoGlobalIndex++;
@@ -1495,7 +1468,7 @@
         return { ...item, itemPhotoTags };
       });
 
-      const pageSize = 6; 
+      const pageSize = 6;
       const totalPages = Math.max(1, Math.ceil(processedList.length / pageSize));
 
       const container = document.getElementById('dl-print-list');
@@ -1561,15 +1534,14 @@
       container.innerHTML = pagesHtml;
     }
 
-    // 🎯 自動識別目前所在畫面（首頁或日誌列印頁）進行高清預覽與下載
     async function exportDailyReportImage() {
       const isDailyLogTabVisible = !document.getElementById('view-dailylog')?.classList.contains('hidden');
       const filterDate = (isDailyLogTabVisible ? document.getElementById('dl-print-date')?.value : document.getElementById('ql-filter-date')?.value) || new Date().toISOString().split('T')[0];
-      
-      let targetArea = isDailyLogTabVisible 
-        ? document.getElementById('dailylog-print-area') 
+
+      const targetArea = isDailyLogTabVisible
+        ? document.getElementById('dailylog-print-area')
         : document.getElementById('daily-report-capture-area');
-      
+
       if (!targetArea || targetArea.innerText.trim().length < 5) {
         alert('找不到呈報內容區域，請確認目前有工作日誌紀錄');
         return;
@@ -1579,13 +1551,13 @@
       hiddenEls.forEach(el => el.style.display = 'none');
 
       try {
-        const canvas = await html2canvas(targetArea, { 
-          scale: 2, 
-          backgroundColor: '#ffffff', 
+        const canvas = await html2canvas(targetArea, {
+          scale: 2,
+          backgroundColor: '#ffffff',
           useCORS: true,
           windowWidth: 750
         });
-        
+
         const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
         let modal = document.getElementById('report-preview-modal');
@@ -1604,7 +1576,7 @@
               </h3>
               <button type="button" onclick="document.getElementById('report-preview-modal').remove()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 text-sm">✕ 關閉</button>
             </div>
-            
+
             <div class="flex-1 overflow-auto bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center justify-center">
               <img src="${imgDataUrl}" class="max-h-[65vh] w-auto h-auto object-contain rounded shadow border border-slate-300 block mx-auto cursor-pointer" onclick="window.open('${imgDataUrl}')" title="點擊在新視窗檢視大圖">
             </div>
@@ -1621,7 +1593,6 @@
           </div>
         `;
         modal.style.display = 'flex';
-
       } catch (err) {
         console.error(err);
         alert('產生呈報圖片失敗，請檢查主控台錯誤訊息');
@@ -1710,7 +1681,6 @@
     }
 
     // ================= 6. 公告園地 =================
-   // 自動查詢 API Key 支援的最新模型，並關閉思考延遲實現 3~5 秒極速辨識
     async function callGeminiWithFallback(apiKey, parts) {
       let candidateModels = [
         'gemini-2.5-flash-lite',
@@ -1718,7 +1688,6 @@
         'gemini-flash-latest'
       ];
 
-      // 1. 動態向 Google 查詢您 API Key 目前真正支援的所有 Flash 模型（永遠不怕改版失效）
       try {
         const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
         if (listRes.ok) {
@@ -1727,7 +1696,6 @@
             .filter(m => m.name && m.name.includes('flash') && (m.supportedGenerationMethods || []).includes('generateContent'))
             .map(m => m.name.replace('models/', ''));
           if (available.length > 0) {
-            // 優先把最快不卡頓的 lite / flash 模型排在最前面
             available.sort((a, b) => (b.includes('lite') ? 1 : 0) - (a.includes('lite') ? 1 : 0));
             candidateModels = [...new Set([...available, ...candidateModels])];
           }
@@ -1736,13 +1704,11 @@
 
       let lastErrorMsg = '';
 
-      // 2. 依序呼叫可用模型
       for (const modelName of candidateModels) {
         try {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 30000);
 
-          // 針對 2.5 系列關閉預設思考延遲，大幅提升圖片文字提取速度
           const genConfig = { temperature: 0.1 };
           if (modelName.includes('2.5')) {
             genConfig.thinkingConfig = { thinkingBudget: 0 };
@@ -1790,7 +1756,6 @@
       btn.innerHTML = '⏳ 正在壓縮圖片並請 AI 辨識文字 (約需 5~15 秒)...';
 
       try {
-        // 建檔保存用高清圖 (1000px)，送給 AI 辨識用輕量高速圖 (750px)
         const photoB64 = await compressImageToBase64(file, 1000, 0.78);
         const aiPhotoB64 = await compressImageToBase64(file, 750, 0.65);
         let aiSummary = '（尚未設定 Gemini API Key，僅保存圖檔與標題）';
@@ -2051,7 +2016,21 @@
       let photoB64 = '';
       if (photoFile) photoB64 = await compressImageToBase64(photoFile, 600, 0.6);
 
-      appData.repairs.unshift({ id: Date.now(), cat, loc, desc, photo: photoB64, status: '待物業處理', date: new Date().toISOString().split('T')[0] });
+      appData.repairs.unshift({
+        id: Date.now(),
+        cat,
+        loc,
+        desc,
+        photo: photoB64,
+        status: '待物業處理',
+        date: new Date().toISOString().split('T')[0],
+        dispatchDate: '',
+        dispatchVendor: '',
+        dispatchNote: '',
+        acceptDate: '',
+        acceptBy: '',
+        acceptNote: ''
+      });
       document.getElementById('rep-loc').value = '';
       document.getElementById('rep-desc').value = '';
       document.getElementById('rep-photo').value = '';
@@ -2066,6 +2045,202 @@
         item.status = stages[nextIdx];
         syncToCloud();
       }
+    }
+
+    function saveRepairDispatch(id, markAsDispatched = false) {
+      const item = appData.repairs.find(r => r.id === id);
+      if (!item) return;
+
+      item.dispatchDate = document.getElementById(`rep-dispatch-date-${id}`)?.value || '';
+      item.dispatchVendor = document.getElementById(`rep-dispatch-vendor-${id}`)?.value.trim() || '';
+      item.dispatchNote = document.getElementById(`rep-dispatch-note-${id}`)?.value.trim() || '';
+
+      if (markAsDispatched && item.status !== '已驗收結案') {
+        item.status = '已派工施工中';
+      }
+
+      syncToCloud();
+    }
+
+    function saveRepairAcceptance(id, markAsAccepted = false) {
+      const item = appData.repairs.find(r => r.id === id);
+      if (!item) return;
+
+      item.acceptDate = document.getElementById(`rep-accept-date-${id}`)?.value || '';
+      item.acceptBy = document.getElementById(`rep-accept-by-${id}`)?.value.trim() || '';
+      item.acceptNote = document.getElementById(`rep-accept-note-${id}`)?.value.trim() || '';
+
+      if (markAsAccepted) {
+        item.status = '已驗收結案';
+      }
+
+      syncToCloud();
+    }
+
+    function exportRepairHtml(id) {
+      const item = appData.repairs.find(r => r.id === id);
+      if (!item) return;
+
+      const escapeHtml = (str = '') =>
+        String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+
+      const commName = appData.meta?.communityName || '小A 社區物業管理';
+      const photoSection = item.photo
+        ? `<div style="margin-top:14px;">
+             <div style="font-weight:bold;margin-bottom:6px;font-size:14px;">現場報修照片</div>
+             <img src="${item.photo}" alt="報修照片" style="max-width:360px;max-height:260px;height:auto;border:1px solid #cbd5e1;border-radius:4px;display:block;" />
+           </div>`
+        : '';
+
+      const htmlDoc = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>報修結案單 - ${escapeHtml(String(item.id))}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .sheet {
+      max-width: 780px;
+      margin: 0 auto;
+      border: 1.5px solid #334155;
+      padding: 24px 28px;
+      border-radius: 6px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+    .top-bar h1 { margin: 0; font-size: 21px; }
+    .status-tag {
+      border: 1px solid #0f172a;
+      padding: 2px 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #94a3b8;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      width: 145px;
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+    .sign-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+    .sign-line {
+      border-top: 1px solid #475569;
+      padding-top: 6px;
+    }
+    .toolbar {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .toolbar button {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    @media print {
+      .toolbar { display: none; }
+      body { padding: 0; }
+      .sheet { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" onclick="window.print()">列印此單據 / 另存 PDF</button>
+  </div>
+  <div class="sheet">
+    <div class="top-bar">
+      <h1>${escapeHtml(commName)} — 報修處理與驗收單</h1>
+      <span class="status-tag">狀態：${escapeHtml(item.status || '待物業處理')}</span>
+    </div>
+    <table>
+      <tr>
+        <th>工單編號</th>
+        <td>${escapeHtml(String(item.id || '-'))}</td>
+        <th>開立日期</th>
+        <td>${escapeHtml(item.date || '-')}</td>
+      </tr>
+      <tr>
+        <th>報修類別</th>
+        <td>${escapeHtml(item.cat || '-')}</td>
+        <th>報修地點／戶別</th>
+        <td>${escapeHtml(item.loc || '-')}</td>
+      </tr>
+      <tr>
+        <th>故障狀況描述</th>
+        <td colspan="3">${escapeHtml(item.desc || '-')}</td>
+      </tr>
+      <tr>
+        <th>派工日期</th>
+        <td>${escapeHtml(item.dispatchDate || '-')}</td>
+        <th>派工廠商／人員</th>
+        <td>${escapeHtml(item.dispatchVendor || '-')}</td>
+      </tr>
+      <tr>
+        <th>派工說明</th>
+        <td colspan="3">${escapeHtml(item.dispatchNote || '-')}</td>
+      </tr>
+      <tr>
+        <th>驗收日期</th>
+        <td>${escapeHtml(item.acceptDate || '-')}</td>
+        <th>驗收人員</th>
+        <td>${escapeHtml(item.acceptBy || '-')}</td>
+      </tr>
+      <tr>
+        <th>處理結果與備註</th>
+        <td colspan="3">${escapeHtml(item.acceptNote || '-')}</td>
+      </tr>
+    </table>
+    ${photoSection}
+    <div class="sign-row">
+      <div class="sign-line">報修人／住戶簽章：</div>
+      <div class="sign-line">承攬廠商簽章：</div>
+      <div class="sign-line">物業／主委核章：</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `報修單_${item.id}_${item.date || '紀錄'}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     function addRenovation() {
@@ -2222,18 +2397,104 @@
         </div>`;
       }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無帶看委託紀錄</p>';
 
-      document.getElementById('repairs-list').innerHTML = appData.repairs.map(r => `
-        <div class="p-3 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
-          <div class="flex items-center gap-3">
-            ${r.photo ? `<img src="${r.photo}" class="w-12 h-12 object-cover rounded border">` : ''}
-            <div><span class="text-xs bg-slate-100 px-2 py-0.5 rounded mr-1">${r.cat}</span><strong>${r.loc}</strong><p class="text-slate-600 text-xs mt-0.5">${r.desc} (${r.date})</p></div>
+      document.getElementById('repairs-list').innerHTML = appData.repairs.map(r => {
+        const isAccepted = r.status === '已驗收結案';
+        const statusBadgeClass = isAccepted
+          ? 'bg-emerald-100 text-emerald-800'
+          : 'bg-amber-100 text-amber-800';
+
+        return `
+          <div class="p-4 border border-slate-200 rounded-xl bg-white space-y-3 text-sm">
+            <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div class="flex items-start gap-3">
+                ${r.photo ? `<img src="${r.photo}" onclick="window.open('${r.photo}')" class="w-14 h-14 object-cover rounded-lg border border-slate-200 cursor-zoom-in shrink-0" title="點擊查看原圖">` : ''}
+                <div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">${r.cat || ''}</span>
+                    <strong class="text-slate-800">${r.loc || ''}</strong>
+                    <span class="text-xs text-slate-400">(${r.date || ''})</span>
+                  </div>
+                  <p class="text-slate-600 text-xs mt-1">${r.desc || ''}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold ${statusBadgeClass}">${r.status || '待物業處理'}</span>
+                <button type="button" onclick="advanceRepairStage(${r.id})" title="點擊推進下一階段" class="text-xs px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium">
+                  推進階段 ↻
+                </button>
+                <button type="button" onclick="deleteItem('repairs', ${r.id})" class="text-slate-400 hover:text-rose-600 p-1" title="刪除">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- 已派工階段輸入區 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+              <div class="text-xs font-bold text-blue-700">一、已派工資料</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label class="block text-slate-500 mb-1">派工日期</label>
+                  <input type="date" id="rep-dispatch-date-${r.id}" value="${r.dispatchDate || ''}" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+                <div>
+                  <label class="block text-slate-500 mb-1">派工廠商／人員</label>
+                  <input type="text" id="rep-dispatch-vendor-${r.id}" value="${r.dispatchVendor || ''}" placeholder="例如：○○機電 / 陳師傅" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+              </div>
+              <div class="text-xs">
+                <label class="block text-slate-500 mb-1">派工說明</label>
+                <input type="text" id="rep-dispatch-note-${r.id}" value="${r.dispatchNote || ''}" placeholder="填寫派工內容、預計進場時間或備註" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+              </div>
+              <div class="flex flex-wrap gap-2 pt-0.5">
+                <button type="button" onclick="saveRepairDispatch(${r.id}, false)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium">
+                  儲存派工資料
+                </button>
+                <button type="button" onclick="saveRepairDispatch(${r.id}, true)" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                  標記「已派工施工中」並儲存
+                </button>
+              </div>
+            </div>
+
+            <!-- 已驗收階段輸入區 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+              <div class="text-xs font-bold text-emerald-700">二、已驗收資料</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label class="block text-slate-500 mb-1">驗收日期</label>
+                  <input type="date" id="rep-accept-date-${r.id}" value="${r.acceptDate || ''}" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+                <div>
+                  <label class="block text-slate-500 mb-1">驗收人員</label>
+                  <input type="text" id="rep-accept-by-${r.id}" value="${r.acceptBy || ''}" placeholder="例如：社區主任 / 總幹事" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+              </div>
+              <div class="text-xs">
+                <label class="block text-slate-500 mb-1">處理結果與驗收備註</label>
+                <input type="text" id="rep-accept-note-${r.id}" value="${r.acceptNote || ''}" placeholder="填寫修繕完成情形、更換零件或費用說明" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+              </div>
+              <div class="flex flex-wrap gap-2 pt-0.5">
+                <button type="button" onclick="saveRepairAcceptance(${r.id}, false)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium">
+                  儲存驗收資料
+                </button>
+                <button type="button" onclick="saveRepairAcceptance(${r.id}, true)" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium">
+                  確認「已驗收結案」
+                </button>
+              </div>
+            </div>
+
+            <!-- 匯出 HTML 列印檔 -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <span class="text-xs ${isAccepted ? 'text-emerald-700 font-medium' : 'text-slate-500'}">
+                ${isAccepted ? '已完成驗收結案，可匯出完整 HTML 單據列印' : '可隨時匯出目前進度或於「已驗收結案」後匯出列印'}
+              </span>
+              <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出列印 HTML 檔
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="advanceRepairStage(${r.id})" title="點擊推進下一階段" class="text-xs px-3 py-1 rounded-full font-medium ${r.status==='已驗收結案'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${r.status} ↻</button>
-            <button onclick="deleteItem('repairs', ${r.id})" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>
-        </div>
-      `).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無報修工單</p>';
+        `;
+      }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無報修工單</p>';
 
       document.getElementById('renovations-list').innerHTML = appData.renovations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex justify-between text-sm">
@@ -2357,28 +2618,6 @@
       };
       reader.readAsText(file);
     }
-    function importLocalJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (!imported.meta) { alert('檔案格式不符'); return; }
-          if (!confirm(`確定要匯入「${imported.meta.communityName || '備份檔'}」嗎？這將覆蓋目前資料並自動同步至您的 Google 雲端硬碟。`)) return;
-          appData = { ...appData, ...imported };
-          await syncToCloud();
-          alert('匯入還原成功！');
-        } catch (err) {
-          alert('JSON 解析失敗');
-        }
-        event.target.value = '';
-      };
-      reader.readAsText(file);
-    }
-
   </script>
-  
 </body>
 </html>
-    
