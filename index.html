@@ -407,13 +407,17 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <span class="text-xs text-slate-500">✨ 上傳後將自動呼叫 AI 總幹事判讀公告圖片重點文字並建檔保存</span>
-            <button type="button" onclick="uploadAndAnalyzeAnnouncement()" id="ann-upload-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
-              <i data-lucide="sparkles" class="w-4 h-4"></i> 上傳圖檔並請 AI 分析記錄
-            </button>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <span class="text-xs text-slate-500">✨ 可選擇直接建檔保存，或交由 AI 總幹事自動判讀公告圖片重點</span>
+            <div class="flex flex-wrap items-center gap-2 ml-auto">
+              <button type="button" onclick="saveAnnouncementDirect()" id="ann-direct-save-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
+                <i data-lucide="save" class="w-4 h-4"></i> 直接儲存
+              </button>
+              <button type="button" onclick="uploadAndAnalyzeAnnouncement()" id="ann-upload-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> 上傳圖檔並請 AI 分析記錄
+              </button>
+            </div>
           </div>
-        </div>
 
         <!-- 搜尋公告園地 -->
         <div>
@@ -1739,7 +1743,45 @@
       }
       return { ok: false, text: `⚠️ AI 解析未完成（原因：${lastErrorMsg || '請檢查設定中的 Gemini API Key 是否正確'}），但公告圖檔已成功建檔！` };
     }
+async function saveAnnouncementDirect() {
+      const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
+      const title = document.getElementById('ann-title').value.trim();
+      const file = document.getElementById('ann-image-file').files[0];
 
+      if (!title || !file) {
+        alert('請輸入「公告標題」並選擇「公告圖檔」！');
+        return;
+      }
+
+      const btn = document.getElementById('ann-direct-save-btn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ 正在儲存圖檔...';
+
+      try {
+        const photoB64 = await compressImageToBase64(file, 1000, 0.78);
+
+        if (!Array.isArray(appData.announcements)) appData.announcements = [];
+        appData.announcements.unshift({
+          id: Date.now(),
+          date,
+          title,
+          photo: photoB64,
+          aiSummary: '（直接儲存圖檔，未執行 AI 文字解析）'
+        });
+
+        document.getElementById('ann-title').value = '';
+        document.getElementById('ann-image-file').value = '';
+        await syncToCloud();
+        alert('✅ 公告圖檔已直接儲存並同步至雲端！');
+      } catch (err) {
+        console.error(err);
+        alert('儲存失敗：' + (err.message || '請確認選擇的是標準 JPG / PNG 圖片檔'));
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> 直接儲存';
+        lucide.createIcons();
+      }
+    }
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -2580,6 +2622,7 @@
       if (!apiKey) { alert('請先在右上角「設定」中填入您的 Gemini API Key！'); openConfigModal(); return; }
 
       const input = document.getElementById('ai-prompt-input');
+      const sendBtn = document.getElementById('ai-send-btn');
       const prompt = input.value.trim();
       if (!prompt) return;
 
@@ -2588,22 +2631,42 @@
       input.value = '';
       chatBox.scrollTop = chatBox.scrollHeight;
 
-      const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r=>r.status!=='已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
+      const loadingId = 'ai-loading-' + Date.now();
+      chatBox.innerHTML += `<div id="${loadingId}" class="text-left"><div class="inline-block bg-white border border-slate-200 text-slate-500 px-3 py-2 rounded-xl text-xs animate-pulse">⏳ AI 總幹事思考中...</div></div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerText = '處理中...';
+      }
+
+      const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r => r.status !== '已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `你是一位專業的台灣社區物業總幹事。目前社區數據摘要：${contextSummary}。請用專業、精簡的繁體中文回答以下問題：\n${prompt}` }] }]
-          })
-        });
-        const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || ('系統目前忙碌中，請稍後再試一次');
+        const result = await callGeminiWithFallback(apiKey, [
+          {
+            text: `你是一位專業的台灣社區物業總幹事。目前社區數據摘要：${contextSummary}。請用專業、精簡的繁體中文回答以下問題：\n${prompt}`
+          }
+        ]);
+
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+
+        const reply = result.ok
+          ? result.text
+          : `⚠️ 無法取得回應：${result.text.replace(/^⚠️ AI 解析未完成（原因：|），但公告圖檔已成功建檔！$/g, '')}`;
+
         chatBox.innerHTML += `<div class="text-left"><div class="inline-block bg-white border border-slate-200 text-slate-800 px-3 py-2 rounded-xl text-xs whitespace-pre-line">${reply}</div></div>`;
         chatBox.scrollTop = chatBox.scrollHeight;
       } catch (err) {
-        chatBox.innerHTML += `<div class="text-xs text-rose-600">連線失敗，請檢查網路或 API Key。</div>`;
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        chatBox.innerHTML += `<div class="text-xs text-rose-600">連線失敗：${err.message || '請檢查網路或 API Key'}</div>`;
+      } finally {
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerText = '發送';
+        }
       }
     }
 
