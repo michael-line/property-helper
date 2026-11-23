@@ -82,6 +82,11 @@
 
       <div class="space-y-3 text-sm">
         <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">填單管理員／班別（選填）</label>
+          <input type="text" id="qr-rep-admin" placeholder="例如：日班管理員王先生、夜班李先生" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+
+        <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修類別 <span class="text-rose-500">*</span></label>
           <select id="qr-rep-cat" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
             <option value="水電管線">💧 水電管線</option>
@@ -665,8 +670,8 @@
 
     <!-- ================= 9. 反應報修 ================= -->
     <section id="view-repairs" class="hidden space-y-4">
-      <div class="paper-card p-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div class="paper-card p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <h2 class="text-lg font-bold text-slate-800">反應報修工單全生命週期追蹤</h2>
             <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700" id="repairs-total-badge">處理中 0 件 / 累計 0 單</span>
@@ -675,7 +680,31 @@
             <i data-lucide="qr-code" class="w-4 h-4"></i> 產生管理員填單 QR Code
           </button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
+
+        <!-- 各類別案件統計與篩選列 -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-bold text-slate-700">依類別篩選：</span>
+              <select id="rep-filter-cat" onchange="renderAll()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-xs font-medium">
+                <option value="all">全部類別</option>
+                <option value="水電管線">💧 水電管線</option>
+                <option value="電梯設施">🛗 電梯設施</option>
+                <option value="照明電力">⚡ 照明電力</option>
+                <option value="弱電門禁">🔔 弱電門禁</option>
+                <option value="壁癌滲漏">🏚️ 壁癌滲漏</option>
+                <option value="環境衛生">🧹 環境衛生</option>
+                <option value="違規安全">🚨 違規安全</option>
+                <option value="安寧秩序(噪音/菸害)">🔇 安寧秩序(噪音/菸害)</option>
+                <option value="其他反應">💬 其他反應</option>
+              </select>
+            </div>
+            <button type="button" onclick="document.getElementById('rep-filter-cat').value='all'; renderAll();" class="text-xs text-slate-500 hover:text-slate-800 underline">重設篩選</button>
+          </div>
+          <div id="rep-category-stats" class="flex flex-wrap gap-1.5 text-xs"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
           <select id="rep-cat" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
             <option value="水電管線">💧 水電管線</option>
             <option value="電梯設施">🛗 電梯設施</option>
@@ -907,6 +936,7 @@
     }
 
     async function submitQuickReport() {
+      const reporterInfo = document.getElementById('qr-rep-admin').value.trim();
       const cat = document.getElementById('qr-rep-cat').value;
       const loc = document.getElementById('qr-rep-loc').value.trim();
       const desc = document.getElementById('qr-rep-desc').value.trim();
@@ -935,6 +965,7 @@
           method: 'POST',
           body: JSON.stringify({
             key: getReportSecretKey(),
+            reporterInfo,
             cat,
             loc,
             desc,
@@ -947,6 +978,7 @@
           throw new Error(result.error || '寫入失敗');
         }
 
+        document.getElementById('qr-rep-admin').value = '';
         document.getElementById('qr-rep-loc').value = '';
         document.getElementById('qr-rep-desc').value = '';
         document.getElementById('qr-rep-photo').value = '';
@@ -2265,6 +2297,7 @@
         cat,
         loc,
         desc,
+        reporterInfo: '',
         photo: photoB64,
         status: '待物業處理',
         date: new Date().toISOString().split('T')[0],
@@ -2480,6 +2513,10 @@
         <td>${escapeHtml(item.loc || '-')}</td>
       </tr>
       <tr>
+        <th>填單管理員／班別</th>
+        <td colspan="3">${escapeHtml(item.reporterInfo || (item.source === 'QR_ADMIN' ? '管理室 QR 開單（未填姓名/班別）' : '物業系統開立'))}</td>
+      </tr>
+      <tr>
         <th>反應內容／故障狀況描述</th>
         <td colspan="3">${escapeHtml(item.desc || '-')}</td>
       </tr>
@@ -2679,7 +2716,38 @@
         </div>`;
       }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無帶看委託紀錄</p>';
 
-      document.getElementById('repairs-list').innerHTML = appData.repairs.map(r => {
+      const repairCategories = [
+        '水電管線', '電梯設施', '照明電力', '弱電門禁', '壁癌滲漏',
+        '環境衛生', '違規安全', '安寧秩序(噪音/菸害)', '其他反應'
+      ];
+      const selectedRepairCat = document.getElementById('rep-filter-cat')?.value || 'all';
+
+      const statsEl = document.getElementById('rep-category-stats');
+      if (statsEl) {
+        const allBadgeClass = selectedRepairCat === 'all'
+          ? 'bg-slate-800 text-white border-slate-800'
+          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100';
+
+        const catButtons = repairCategories.map(catName => {
+          const count = appData.repairs.filter(x => x.cat === catName).length;
+          const isSelected = selectedRepairCat === catName;
+          const btnClass = isSelected
+            ? 'bg-amber-600 text-white border-amber-600 font-bold'
+            : (count > 0 ? 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100');
+          return `<button type="button" onclick="document.getElementById('rep-filter-cat').value='${catName}'; renderAll();" class="px-2.5 py-1 rounded-full border transition ${btnClass}">${catName} (${count})</button>`;
+        }).join('');
+
+        statsEl.innerHTML = `
+          <button type="button" onclick="document.getElementById('rep-filter-cat').value='all'; renderAll();" class="px-2.5 py-1 rounded-full border font-bold transition ${allBadgeClass}">全部 (${appData.repairs.length})</button>
+          ${catButtons}
+        `;
+      }
+
+      const filteredRepairs = selectedRepairCat === 'all'
+        ? appData.repairs
+        : appData.repairs.filter(r => r.cat === selectedRepairCat);
+
+      document.getElementById('repairs-list').innerHTML = filteredRepairs.map(r => {
         const isAccepted = r.status === '已驗收結案';
         const statusBadgeClass = isAccepted
           ? 'bg-emerald-100 text-emerald-800'
@@ -2695,7 +2763,7 @@
                     <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">${r.cat || ''}</span>
                     <strong class="text-slate-800">${r.loc || ''}</strong>
                     <span class="text-xs text-slate-400">(${r.date || ''})</span>
-                    ${r.source === 'QR_ADMIN' ? '<span class="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">QR 開單</span>' : ''}
+                    ${r.source === 'QR_ADMIN' ? `<span class="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">QR 開單${r.reporterInfo ? `：${r.reporterInfo}` : ''}</span>` : ''}
                   </div>
                   <p class="text-slate-600 text-xs mt-1">${r.desc || ''}</p>
                 </div>
@@ -2797,7 +2865,7 @@
             </div>
           </div>
         `;
-      }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無反應報修工單</p>';
+      }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無符合條件的反應報修工單</p>';
 
       document.getElementById('renovations-list').innerHTML = appData.renovations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex justify-between text-sm">
