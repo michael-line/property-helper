@@ -82,9 +82,10 @@
 
       <div class="space-y-3 text-sm">
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">填單管理員／班別（選填）</label>
-          <input type="text" id="qr-rep-admin" placeholder="例如：日班管理員王先生、夜班李先生" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
-        </div>
+  <label class="block text-xs font-bold text-slate-600 mb-1">填單管理員／班別（可直接點選或手動輸入）</label>
+  <div id="qr-admin-quick-buttons" class="flex flex-wrap gap-1.5 mb-2"></div>
+  <input type="text" id="qr-rep-admin" placeholder="點選上方名單，或直接輸入管理員姓名／班別" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+</div>
 
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修類別 <span class="text-rose-500">*</span></label>
@@ -809,6 +810,10 @@
         <div>
           <label class="block font-medium text-slate-700 mb-1">管理員填單驗證暗號（需與 GAS 內 SECRET_KEY 一致）</label>
           <input type="text" id="cfg-report-key" placeholder="例如：mos-2026-report" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">固定管理員／班別快選名單（以逗號或換行分隔）</label>
+          <textarea id="cfg-qr-admin-list" rows="2" placeholder="例如：日班王先生, 晚班陳先生, 夜班李先生" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></textarea>
         </div>
         <hr class="border-slate-100">
         <div>
@@ -2513,6 +2518,7 @@
         <td>${escapeHtml(item.loc || '-')}</td>
       </tr>
       <tr>
+     
         <th>填單管理員／班別</th>
         <td colspan="3">${escapeHtml(item.reporterInfo || (item.source === 'QR_ADMIN' ? '管理室 QR 開單（未填姓名/班別）' : '物業系統開立'))}</td>
       </tr>
