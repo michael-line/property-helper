@@ -933,9 +933,18 @@ function selectQuickAdmin(name) {
 }
 
 function renderQrAdminQuickButtons() {
-  const container = document.getElementById('qr-admin-quick-buttons');
+  const adminInput = document.getElementById('qr-rep-admin');
+  let container = document.getElementById('qr-admin-quick-buttons');
+
+  if (!container && adminInput && adminInput.parentElement) {
+    container = document.createElement('div');
+    container.id = 'qr-admin-quick-buttons';
+    container.className = 'flex flex-wrap gap-1.5 mb-2';
+    adminInput.parentElement.insertBefore(container, adminInput);
+  }
   if (!container) return;
-  const currentVal = (document.getElementById('qr-rep-admin')?.value || '').trim();
+
+  const currentVal = (adminInput?.value || '').trim();
   const list = getQrAdminList();
 
   container.innerHTML = list.map(name => {
@@ -947,6 +956,14 @@ function renderQrAdminQuickButtons() {
     return `<button type="button" onclick="selectQuickAdmin('${safeJsName}')" class="px-2.5 py-1 rounded-lg border text-xs transition ${cls}">${name}</button>`;
   }).join('');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(window.location.search).get('mode') === 'quick-report') {
+    renderQrAdminQuickButtons();
+  }
+});
+
+// （這裡下面就是原本第 950 行的 function getReportSecretKey()，請保留不要動）
     function getReportSecretKey() {
       return (URL_REPORT_KEY || localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY).trim();
     }
