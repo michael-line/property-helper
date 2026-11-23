@@ -69,8 +69,59 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
+  <!-- 管理員精簡填單模式專用畫面（掃描 QR Code 進入時僅顯示此區，不載入任何既有資料） -->
+  <div id="quick-report-portal" class="hidden min-h-screen bg-slate-50 py-6 px-4 flex items-center justify-center">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-md space-y-4">
+      <div class="border-b border-slate-100 pb-3">
+        <div class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 mb-2">
+          <span>📋 管理室開單專用通道</span>
+        </div>
+        <h1 class="text-xl font-bold text-slate-800">開立反應報修單</h1>
+        <p class="text-xs text-slate-500 mt-1">請填寫現場反應或報修資訊，送出後將直接建檔交由社區主任接續派工與處理。</p>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修類別 <span class="text-rose-500">*</span></label>
+          <select id="qr-rep-cat" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="水電管線">💧 水電管線</option>
+            <option value="電梯設施">🛗 電梯設施</option>
+            <option value="照明電力">⚡ 照明電力</option>
+            <option value="弱電門禁">🔔 弱電門禁</option>
+            <option value="壁癌滲漏">🏚️ 壁癌滲漏</option>
+            <option value="環境衛生">🧹 環境衛生</option>
+            <option value="違規安全">🚨 違規安全</option>
+            <option value="安寧秩序(噪音/菸害)">🔇 安寧秩序(噪音/菸害)</option>
+            <option value="其他反應">💬 其他反應</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修地點或戶別 <span class="text-rose-500">*</span></label>
+          <input type="text" id="qr-rep-loc" placeholder="例如：J棟14樓、B1車道、大廳梯廳..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">反應內容或故障狀況描述 <span class="text-rose-500">*</span></label>
+          <textarea id="qr-rep-desc" rows="4" placeholder="請簡述現場狀況、時間或住戶反應重點..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">現場照片（選填，建議拍攝現況）</label>
+          <input type="file" id="qr-rep-photo" accept="image/*" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs bg-slate-50">
+        </div>
+      </div>
+
+      <div id="qr-rep-feedback" class="hidden text-xs rounded-xl p-3"></div>
+
+      <button type="button" id="qr-rep-submit-btn" onclick="submitQuickReport()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2.5 rounded-xl shadow-xs transition">
+        送出反應報修單
+      </button>
+    </div>
+  </div>
+
   <!-- 頂部導覽列 -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
+  <header id="main-header" class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="switchTab('dashboard')">
         <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm">
@@ -117,7 +168,7 @@
   </header>
 
   <!-- 主內容區 -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
+  <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
     
     <!-- 首次設定提示橫幅 -->
     <div id="setup-banner" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
@@ -615,9 +666,14 @@
     <!-- ================= 9. 反應報修 ================= -->
     <section id="view-repairs" class="hidden space-y-4">
       <div class="paper-card p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-800">反應報修工單全生命週期追蹤</h2>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700" id="repairs-total-badge">處理中 0 件 / 累計 0 單</span>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-800">反應報修工單全生命週期追蹤</h2>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700" id="repairs-total-badge">處理中 0 件 / 累計 0 單</span>
+          </div>
+          <button type="button" onclick="openQuickReportQRModal()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
+            <i data-lucide="qr-code" class="w-4 h-4"></i> 產生管理員填單 QR Code
+          </button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
           <select id="rep-cat" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
@@ -672,9 +728,36 @@
     </section>
   </main>
 
+  <!-- 管理員填單 QR Code 彈窗 -->
+  <div id="qr-report-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="qr-code" class="w-5 h-5 text-amber-600"></i>
+          <h3 class="font-bold text-slate-800">管理員填單專屬 QR Code</h3>
+        </div>
+        <button onclick="closeQuickReportQRModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        管理員掃描此 QR Code 後，只會看到<strong>「開立反應報修單」</strong>表單，無法查看您原有的工單、住戶或雲端資料；送出後會直接寫入您的雲端硬碟，再由您接續派工與驗收。
+      </p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center gap-3">
+        <img id="qr-code-img" src="" alt="管理員填單 QR Code" class="w-48 h-48 rounded-lg border border-slate-200 bg-white p-2">
+        <input type="text" id="qr-share-url" readonly class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px] font-mono bg-white text-slate-600">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="copyQuickReportUrl()" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg">複製填單連結</button>
+        <button type="button" onclick="closeQuickReportQRModal()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">完成</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 設定 Modal -->
   <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <h3 class="font-bold text-slate-800">系統、雲端與 AI 設定</h3>
         <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -688,6 +771,15 @@
         <div>
           <label class="block font-medium text-slate-700 mb-1">Gemini API Key (供 AI 總幹事與公告圖檔辨識使用)</label>
           <input type="password" id="cfg-gemini-key" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
+        </div>
+        <hr class="border-slate-100">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">管理員填單 GAS 網址（/exec）</label>
+          <input type="text" id="cfg-report-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">管理員填單驗證暗號（需與 GAS 內 SECRET_KEY 一致）</label>
+          <input type="text" id="cfg-report-key" placeholder="例如：mos-2026-report" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono">
         </div>
         <hr class="border-slate-100">
         <div>
@@ -738,19 +830,28 @@
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
     const DEFAULT_CLIENT_ID = '1004788006918-56ujm7ln8k2ra8ndmrd6kapcsi53aiud.apps.googleusercontent.com';
-    (function autoLoadKeysFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const urlClientId = params.get('cid');
-      const urlGeminiKey = params.get('gkey');
-      if (urlClientId) localStorage.setItem('pm_google_client_id', urlClientId);
-      else if (!localStorage.getItem('pm_google_client_id') && DEFAULT_CLIENT_ID) {
-        localStorage.setItem('pm_google_client_id', DEFAULT_CLIENT_ID);
-      }
-      if (urlGeminiKey) localStorage.setItem('pm_gemini_key', urlGeminiKey);
-      if (urlClientId || urlGeminiKey) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    })();
+    const DEFAULT_REPORT_GAS_URL = 'https://script.google.com/macros/s/AKfycbybOOcnK3yafKDVmWnu1OmOsR5zULeA27r31RRtvqfdqs7ShTkbGaQObgAb_cf0zS0aIg/exec';
+    const DEFAULT_REPORT_KEY = 'mos-2026-report';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const IS_QUICK_REPORT_MODE = urlParams.get('mode') === 'quick-report';
+    const URL_REPORT_KEY = urlParams.get('key') || '';
+
+    if (!IS_QUICK_REPORT_MODE) {
+      (function autoLoadKeysFromUrl() {
+        const urlClientId = urlParams.get('cid');
+        const urlGeminiKey = urlParams.get('gkey');
+        if (urlClientId) localStorage.setItem('pm_google_client_id', urlClientId);
+        else if (!localStorage.getItem('pm_google_client_id') && DEFAULT_CLIENT_ID) {
+          localStorage.setItem('pm_google_client_id', DEFAULT_CLIENT_ID);
+        }
+        if (urlGeminiKey) localStorage.setItem('pm_gemini_key', urlGeminiKey);
+        if (urlClientId || urlGeminiKey) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      })();
+    }
+
     let tokenClient;
     let accessToken = null;
     let driveFileId = null;
@@ -776,8 +877,102 @@
       vendors: []
     };
 
+    function getReportGasUrl() {
+      return (localStorage.getItem('pm_report_gas_url') || DEFAULT_REPORT_GAS_URL).trim();
+    }
+
+    function getReportSecretKey() {
+      return (URL_REPORT_KEY || localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY).trim();
+    }
+
+    function openQuickReportQRModal() {
+      const key = (localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY).trim();
+      const baseUrl = `${window.location.origin}${window.location.pathname}`;
+      const shareUrl = `${baseUrl}?mode=quick-report&key=${encodeURIComponent(key)}`;
+      document.getElementById('qr-share-url').value = shareUrl;
+      document.getElementById('qr-code-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}`;
+      document.getElementById('qr-report-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeQuickReportQRModal() {
+      document.getElementById('qr-report-modal').classList.add('hidden');
+    }
+
+    function copyQuickReportUrl() {
+      const input = document.getElementById('qr-share-url');
+      if (!input) return;
+      navigator.clipboard?.writeText(input.value);
+      alert('已複製管理員填單專屬連結！');
+    }
+
+    async function submitQuickReport() {
+      const cat = document.getElementById('qr-rep-cat').value;
+      const loc = document.getElementById('qr-rep-loc').value.trim();
+      const desc = document.getElementById('qr-rep-desc').value.trim();
+      const photoFile = document.getElementById('qr-rep-photo').files[0];
+      const feedbackEl = document.getElementById('qr-rep-feedback');
+      const btn = document.getElementById('qr-rep-submit-btn');
+
+      feedbackEl.classList.add('hidden');
+      if (!loc || !desc) {
+        feedbackEl.className = 'text-xs rounded-xl p-3 bg-rose-50 text-rose-700 border border-rose-200';
+        feedbackEl.innerText = '⚠️ 請填寫「反應／報修地點或戶別」與「反應內容或故障狀況描述」。';
+        feedbackEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在傳送至雲端...';
+
+      try {
+        let photoB64 = '';
+        if (photoFile) {
+          photoB64 = await compressImageToBase64(photoFile, 650, 0.65);
+        }
+
+        const res = await fetch(getReportGasUrl(), {
+          method: 'POST',
+          body: JSON.stringify({
+            key: getReportSecretKey(),
+            cat,
+            loc,
+            desc,
+            photo: photoB64
+          })
+        });
+        const result = await res.json();
+
+        if (!result.ok) {
+          throw new Error(result.error || '寫入失敗');
+        }
+
+        document.getElementById('qr-rep-loc').value = '';
+        document.getElementById('qr-rep-desc').value = '';
+        document.getElementById('qr-rep-photo').value = '';
+
+        feedbackEl.className = 'text-xs rounded-xl p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium';
+        feedbackEl.innerText = '✅ 反應報修單已成功送出並建檔，主任將於系統接續處理！';
+        feedbackEl.classList.remove('hidden');
+      } catch (err) {
+        feedbackEl.className = 'text-xs rounded-xl p-3 bg-rose-50 text-rose-700 border border-rose-200';
+        feedbackEl.innerText = '❌ 送出失敗：' + (err.message || '請確認網路或暗號設定');
+        feedbackEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '送出反應報修單';
+      }
+    }
+
     // ================= 2. 初始化與導覽 =================
     window.onload = () => {
+      if (IS_QUICK_REPORT_MODE) {
+        document.getElementById('main-header')?.classList.add('hidden');
+        document.getElementById('main-content')?.classList.add('hidden');
+        document.getElementById('quick-report-portal')?.classList.remove('hidden');
+        return;
+      }
+
       lucide.createIcons();
       const localCache = localStorage.getItem('pm_local_data');
       if (localCache) {
@@ -2500,6 +2695,7 @@
                     <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">${r.cat || ''}</span>
                     <strong class="text-slate-800">${r.loc || ''}</strong>
                     <span class="text-xs text-slate-400">(${r.date || ''})</span>
+                    ${r.source === 'QR_ADMIN' ? '<span class="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">QR 開單</span>' : ''}
                   </div>
                   <p class="text-slate-600 text-xs mt-1">${r.desc || ''}</p>
                 </div>
@@ -2682,6 +2878,8 @@
     function openConfigModal() {
       document.getElementById('cfg-client-id').value = localStorage.getItem('pm_google_client_id') || '';
       document.getElementById('cfg-gemini-key').value = localStorage.getItem('pm_gemini_key') || '';
+      document.getElementById('cfg-report-gas-url').value = localStorage.getItem('pm_report_gas_url') || DEFAULT_REPORT_GAS_URL;
+      document.getElementById('cfg-report-key').value = localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY;
       document.getElementById('cfg-comm-name').value = appData.meta.communityName || '';
       document.getElementById('cfg-phone').value = appData.meta.phone || '';
       document.getElementById('cfg-taxid').value = appData.meta.taxId || '';
@@ -2693,6 +2891,9 @@
     function saveConfig() {
       const clientId = document.getElementById('cfg-client-id').value.trim();
       const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
+      const reportGasUrl = document.getElementById('cfg-report-gas-url').value.trim();
+      const reportKey = document.getElementById('cfg-report-key').value.trim();
+
       if (clientId) {
         localStorage.setItem('pm_google_client_id', clientId);
         appData.meta.clientId = clientId;
@@ -2702,6 +2903,12 @@
       if (geminiKey) {
         localStorage.setItem('pm_gemini_key', geminiKey);
         appData.meta.geminiKey = geminiKey;
+      }
+      if (reportGasUrl) {
+        localStorage.setItem('pm_report_gas_url', reportGasUrl);
+      }
+      if (reportKey) {
+        localStorage.setItem('pm_report_key', reportKey);
       }
       appData.meta.communityName = document.getElementById('cfg-comm-name').value.trim();
       appData.meta.phone = document.getElementById('cfg-phone').value.trim();
