@@ -69,7 +69,7 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-<!-- 管理員精簡填單模式專用畫面 -->
+  <!-- 管理員精簡填單與查詢處理模式專用畫面 -->
   <div id="quick-report-portal" class="hidden min-h-screen bg-slate-50 py-6 px-4">
     <div class="max-w-3xl mx-auto space-y-5">
       <!-- 1. 開立反應報修單 -->
@@ -152,7 +152,6 @@
       </div>
     </div>
   </div>
-
   <!-- 頂部導覽列 -->
   <header id="main-header" class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
@@ -464,7 +463,6 @@
         <iframe id="reg-preview-frame" class="w-full h-[600px] rounded-lg border border-slate-200" src=""></iframe>
       </div>
     </section>
-
     <!-- ================= 4. 公告園地 ================= -->
     <section id="view-announcements" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
@@ -619,7 +617,6 @@
         </div>
       </div>
     </section>
-
     <!-- ================= 7. 住戶清冊 ================= -->
     <section id="view-residents" class="hidden space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="res-stats-bar"></div>
@@ -797,7 +794,7 @@
       </div>
 
       <p class="text-xs text-slate-600 leading-relaxed">
-        管理員掃描此 QR Code 後，只會看到<strong>「開立反應報修單」</strong>表單，無法查看您原有的工單、住戶或雲端資料；送出後會直接寫入您的雲端硬碟，再由您接續派工與驗收。
+        管理員掃描此 QR Code 後，可開立反應報修單，也可查詢尚未派工或驗收的反映事項並填寫派工／驗收紀錄（確認結案由主任核准）。
       </p>
 
       <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center gap-3">
@@ -840,7 +837,7 @@
         </div>
         <div>
           <label class="block font-medium text-slate-700 mb-1">固定管理員／班別快選名單（以逗號或換行分隔）</label>
-          <textarea id="cfg-qr-admin-list" rows="2" placeholder="例如：日班王先生, 晚班陳先生, 夜班李先生" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></textarea>
+          <textarea id="cfg-qr-admin-list" rows="2" placeholder="例如：王平, 余玲玲, 邱正哲, 主任" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></textarea>
         </div>
         <hr class="border-slate-100">
         <div>
@@ -885,14 +882,14 @@
       </div>
     </div>
   </div>
-
-  <script>
+ <script>
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
     const DEFAULT_CLIENT_ID = '1004788006918-56ujm7ln8k2ra8ndmrd6kapcsi53aiud.apps.googleusercontent.com';
     const DEFAULT_REPORT_GAS_URL = 'https://script.google.com/macros/s/AKfycbybOOcnK3yafKDVmWnu1OmOsR5zULeA27r31RRtvqfdqs7ShTkbGaQObgAb_cf0zS0aIg/exec';
     const DEFAULT_REPORT_KEY = 'mos-2026-report';
+    const DEFAULT_QR_ADMIN_LIST = ['王平', '余玲玲', '邱正哲', '主任'];
 
     const urlParams = new URLSearchParams(window.location.search);
     const IS_QUICK_REPORT_MODE = urlParams.get('mode') === 'quick-report';
@@ -921,6 +918,8 @@
     let tempQuickPhotos = [];
     let editingWorkLogId = null;
     let isSortMode = false;
+    let adminRepairsCache = [];
+    let adminRepairFilter = 'pending_dispatch';
 
     let appData = {
       meta: { communityName: '', phone: '', taxId: '', lastUpdated: new Date().toISOString() },
@@ -941,58 +940,49 @@
     function getReportGasUrl() {
       return (localStorage.getItem('pm_report_gas_url') || DEFAULT_REPORT_GAS_URL).trim();
     }
-const DEFAULT_QR_ADMIN_LIST = ['王平', '余玲玲', '邱正哲', '主任'];
 
-function getQrAdminList() {
-  const raw = localStorage.getItem('pm_qr_admin_list');
-  if (!raw || !raw.trim()) return DEFAULT_QR_ADMIN_LIST;
-  const list = raw
-    .split(/[,，\n]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
-  return list.length > 0 ? list : DEFAULT_QR_ADMIN_LIST;
-}
-
-function selectQuickAdmin(name) {
-  const input = document.getElementById('qr-rep-admin');
-  if (input) input.value = name;
-  renderQrAdminQuickButtons();
-}
-
-function renderQrAdminQuickButtons() {
-  const adminInput = document.getElementById('qr-rep-admin');
-  let container = document.getElementById('qr-admin-quick-buttons');
-
-  if (!container && adminInput && adminInput.parentElement) {
-    container = document.createElement('div');
-    container.id = 'qr-admin-quick-buttons';
-    container.className = 'flex flex-wrap gap-1.5 mb-2';
-    adminInput.parentElement.insertBefore(container, adminInput);
-  }
-  if (!container) return;
-
-  const currentVal = (adminInput?.value || '').trim();
-  const list = getQrAdminList();
-
-  container.innerHTML = list.map(name => {
-    const active = currentVal === name;
-    const cls = active
-      ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow-2xs'
-      : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-emerald-50 hover:border-emerald-300';
-    const safeJsName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    return `<button type="button" onclick="selectQuickAdmin('${safeJsName}')" class="px-2.5 py-1 rounded-lg border text-xs transition ${cls}">${name}</button>`;
-  }).join('');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (new URLSearchParams(window.location.search).get('mode') === 'quick-report') {
-    renderQrAdminQuickButtons();
-  }
-});
-
-// （這裡下面就是原本第 950 行的 function getReportSecretKey()，請保留不要動）
     function getReportSecretKey() {
       return (URL_REPORT_KEY || localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY).trim();
+    }
+
+    function getQrAdminList() {
+      const raw = localStorage.getItem('pm_qr_admin_list');
+      if (!raw || !raw.trim()) return DEFAULT_QR_ADMIN_LIST;
+      const list = raw
+        .split(/[,，\n]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      return list.length > 0 ? list : DEFAULT_QR_ADMIN_LIST;
+    }
+
+    function selectQuickAdmin(name) {
+      const input = document.getElementById('qr-rep-admin');
+      if (input) input.value = name;
+      renderQrAdminQuickButtons();
+    }
+
+    function renderQrAdminQuickButtons() {
+      const adminInput = document.getElementById('qr-rep-admin');
+      let container = document.getElementById('qr-admin-quick-buttons');
+      if (!container && adminInput && adminInput.parentElement) {
+        container = document.createElement('div');
+        container.id = 'qr-admin-quick-buttons';
+        container.className = 'flex flex-wrap gap-1.5 mb-2';
+        adminInput.parentElement.insertBefore(container, adminInput);
+      }
+      if (!container) return;
+
+      const currentVal = (adminInput?.value || '').trim();
+      const list = getQrAdminList();
+
+      container.innerHTML = list.map(name => {
+        const active = currentVal === name;
+        const cls = active
+          ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow-2xs'
+          : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-emerald-50 hover:border-emerald-300';
+        const safeJsName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `<button type="button" onclick="selectQuickAdmin('${safeJsName}')" class="px-2.5 py-1 rounded-lg border text-xs transition ${cls}">${name}</button>`;
+      }).join('');
     }
 
     function openQuickReportQRModal() {
@@ -1063,10 +1053,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('qr-rep-loc').value = '';
         document.getElementById('qr-rep-desc').value = '';
         document.getElementById('qr-rep-photo').value = '';
+        renderQrAdminQuickButtons();
 
         feedbackEl.className = 'text-xs rounded-xl p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium';
-        feedbackEl.innerText = '✅ 反應報修單已成功送出並建檔，主任將於系統接續處理！';
+        feedbackEl.innerText = '✅ 反應報修單已成功送出並建檔，可於下方查詢派工／驗收或由主任確認結案！';
         feedbackEl.classList.remove('hidden');
+        await loadAdminRepairsList();
       } catch (err) {
         feedbackEl.className = 'text-xs rounded-xl p-3 bg-rose-50 text-rose-700 border border-rose-200';
         feedbackEl.innerText = '❌ 送出失敗：' + (err.message || '請確認網路或暗號設定');
@@ -1077,12 +1069,210 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // ================= 2. 初始化與導覽 =================
+    function setAdminRepairFilter(mode) {
+      adminRepairFilter = mode;
+      ['pending_dispatch', 'pending_accept', 'open_all', 'all'].forEach(m => {
+        const btn = document.getElementById(`qr-flt-${m}`);
+        if (!btn) return;
+        if (m === mode) {
+          btn.className = 'px-3 py-1.5 rounded-full font-bold bg-amber-600 text-white';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200';
+        }
+      });
+      renderAdminRepairsList();
+    }
+
+    async function loadAdminRepairsList() {
+      const listEl = document.getElementById('qr-repairs-list');
+      const btn = document.getElementById('qr-refresh-btn');
+      if (!listEl) return;
+      if (btn) { btn.disabled = true; btn.innerText = '⏳ 查詢中...'; }
+      listEl.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">正在讀取反應報修清單...</p>';
+
+      try {
+        const url = `${getReportGasUrl()}?key=${encodeURIComponent(getReportSecretKey())}&t=${Date.now()}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || '查詢失敗');
+        adminRepairsCache = Array.isArray(data.repairs) ? data.repairs : [];
+        renderAdminRepairsList();
+      } catch (err) {
+        listEl.innerHTML = `<p class="text-xs text-rose-600 py-4 text-center">❌ 查詢失敗：${err.message || '請確認網路或 GAS 部署版本'}</p>`;
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = '↻ 重新整理清單'; }
+      }
+    }
+
+    function renderAdminRepairsList() {
+      const listEl = document.getElementById('qr-repairs-list');
+      if (!listEl) return;
+
+      const filtered = adminRepairsCache.filter(r => {
+        const hasDispatch = !!(r.dispatchDate || r.dispatchVendor || r.dispatchNote || r.status === '已派工施工中' || r.status === '待完工驗收' || r.status === '已驗收結案');
+        const isClosed = r.status === '已驗收結案';
+        if (adminRepairFilter === 'pending_dispatch') return !isClosed && !hasDispatch;
+        if (adminRepairFilter === 'pending_accept') return !isClosed && r.status !== '已驗收結案' && !r.acceptDate;
+        if (adminRepairFilter === 'open_all') return !isClosed;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">目前沒有符合此條件的反映事項</p>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(r => {
+        const isClosed = r.status === '已驗收結案';
+        return `
+          <div class="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
+            <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-2">
+              <div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-xs bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-medium">${r.cat || ''}</span>
+                  <strong class="text-slate-800">${r.loc || ''}</strong>
+                  <span class="text-xs text-slate-400">(${r.date || ''}${r.time ? ` ${r.time}` : ''})</span>
+                  ${r.reporterInfo ? `<span class="text-[11px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">${r.reporterInfo}</span>` : ''}
+                </div>
+                <p class="text-slate-700 text-xs mt-1">${r.desc || ''}</p>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-full font-bold ${isClosed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${r.status || '待物業處理'}</span>
+            </div>
+
+            ${isClosed ? `
+              <p class="text-xs text-emerald-700 font-medium">✅ 本案已由主任驗收結案，管理員端僅供檢視。</p>
+            ` : `
+              <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+                <div class="text-xs font-bold text-blue-700">一、派工資料</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-slate-500 mb-1">派工日期</label>
+                    <input type="date" id="qr-disp-date-${r.id}" value="${r.dispatchDate || ''}" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-slate-500 mb-1">派工廠商／人員</label>
+                    <input type="text" id="qr-disp-vendor-${r.id}" value="${r.dispatchVendor || ''}" placeholder="例如：○○機電 / 陳師傅" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                  </div>
+                </div>
+                <div class="text-xs">
+                  <label class="block text-slate-500 mb-1">派工說明</label>
+                  <input type="text" id="qr-disp-note-${r.id}" value="${r.dispatchNote || ''}" placeholder="填寫派工內容、預計進場時間或備註" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+                <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                  <label class="cursor-pointer text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium">
+                    📷 上傳派工相片
+                    <input type="file" accept="image/*" onchange="handleAdminRepairPhoto(event, '${r.id}', 'dispatch')" class="hidden">
+                  </label>
+                  <button type="button" onclick="saveAdminRepairStage('${r.id}', 'dispatch', false)" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-medium">
+                    儲存派工資料
+                  </button>
+                  <button type="button" onclick="saveAdminRepairStage('${r.id}', 'dispatch', true)" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                    標記「已派工施工中」並儲存
+                  </button>
+                </div>
+                ${r.dispatchPhoto ? `<img src="${r.dispatchPhoto}" class="max-h-32 w-auto h-auto rounded-lg border border-slate-200 mt-1 block">` : ''}
+              </div>
+
+              <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+                <div class="text-xs font-bold text-emerald-700">二、驗收資料（填寫後由主任確認結案）</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-slate-500 mb-1">驗收日期</label>
+                    <input type="date" id="qr-acc-date-${r.id}" value="${r.acceptDate || ''}" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-slate-500 mb-1">驗收人員</label>
+                    <input type="text" id="qr-acc-by-${r.id}" value="${r.acceptBy || ''}" placeholder="填寫驗收管理員姓名" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                  </div>
+                </div>
+                <div class="text-xs">
+                  <label class="block text-slate-500 mb-1">處理結果與驗收備註</label>
+                  <input type="text" id="qr-acc-note-${r.id}" value="${r.acceptNote || ''}" placeholder="填寫修繕完成情形或處理說明" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+                </div>
+                <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                  <label class="cursor-pointer text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium">
+                    📷 上傳處理結果相片
+                    <input type="file" accept="image/*" onchange="handleAdminRepairPhoto(event, '${r.id}', 'accept')" class="hidden">
+                  </label>
+                  <button type="button" onclick="saveAdminRepairStage('${r.id}', 'accept', true)" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium">
+                    儲存驗收資料（送交主任結案）
+                  </button>
+                </div>
+                ${r.acceptPhoto ? `<img src="${r.acceptPhoto}" class="max-h-32 w-auto h-auto rounded-lg border border-slate-200 mt-1 block">` : ''}
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleAdminRepairPhoto(event, id, stage) {
+      const file = event.target.files?.[0];
+      const item = adminRepairsCache.find(r => String(r.id) === String(id));
+      if (!file || !item) return;
+      const b64 = await compressImageToBase64(file, 750, 0.7);
+      if (stage === 'dispatch') item.dispatchPhoto = b64;
+      if (stage === 'accept') item.acceptPhoto = b64;
+      event.target.value = '';
+      await pushAdminRepairUpdate(item, item.status);
+    }
+
+    async function saveAdminRepairStage(id, stage, markNext) {
+      const item = adminRepairsCache.find(r => String(r.id) === String(id));
+      if (!item) return;
+
+      item.dispatchDate = document.getElementById(`qr-disp-date-${id}`)?.value || '';
+      item.dispatchVendor = document.getElementById(`qr-disp-vendor-${id}`)?.value.trim() || '';
+      item.dispatchNote = document.getElementById(`qr-disp-note-${id}`)?.value.trim() || '';
+
+      item.acceptDate = document.getElementById(`qr-acc-date-${id}`)?.value || '';
+      item.acceptBy = document.getElementById(`qr-acc-by-${id}`)?.value.trim() || '';
+      item.acceptNote = document.getElementById(`qr-acc-note-${id}`)?.value.trim() || '';
+
+      let nextStatus = item.status || '待物業處理';
+      if (stage === 'dispatch' && markNext && nextStatus !== '已驗收結案') {
+        nextStatus = '已派工施工中';
+      } else if (stage === 'accept' && markNext && nextStatus !== '已驗收結案') {
+        nextStatus = '待完工驗收';
+      }
+
+      await pushAdminRepairUpdate(item, nextStatus);
+    }
+
+    async function pushAdminRepairUpdate(item, nextStatus) {
+      const res = await fetch(getReportGasUrl(), {
+        method: 'POST',
+        body: JSON.stringify({
+          key: getReportSecretKey(),
+          action: 'updateRepair',
+          id: item.id,
+          dispatchDate: item.dispatchDate || '',
+          dispatchVendor: item.dispatchVendor || '',
+          dispatchNote: item.dispatchNote || '',
+          dispatchPhoto: item.dispatchPhoto || '',
+          acceptDate: item.acceptDate || '',
+          acceptBy: item.acceptBy || '',
+          acceptNote: item.acceptNote || '',
+          acceptPhoto: item.acceptPhoto || '',
+          status: nextStatus
+        })
+      });
+      const result = await res.json();
+      if (!result.ok) {
+        alert('❌ 更新失敗：' + (result.error || '請稍後再試'));
+        return;
+      }
+      alert('✅ 已儲存至雲端！');
+      await loadAdminRepairsList();
+    }
+   // ================= 2. 初始化與導覽 =================
     window.onload = () => {
       if (IS_QUICK_REPORT_MODE) {
         document.getElementById('main-header')?.classList.add('hidden');
         document.getElementById('main-content')?.classList.add('hidden');
         document.getElementById('quick-report-portal')?.classList.remove('hidden');
+        renderQrAdminQuickButtons();
+        loadAdminRepairsList();
         return;
       }
 
@@ -1291,7 +1481,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       updateSyncUI('syncing', '正在同步至 Google 雲端...');
       try {
-        const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?uploadType=media`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -2585,7 +2775,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <th>工單編號</th>
         <td>${escapeHtml(String(item.id || '-'))}</td>
         <th>開立日期時間</th>
-<td>${escapeHtml(`${item.date || '-'}${item.time ? ` ${item.time}` : ''}`)}</td>
+        <td>${escapeHtml(`${item.date || '-'}${item.time ? ` ${item.time}` : ''}`)}</td>
       </tr>
       <tr>
         <th>反應／報修類別</th>
@@ -2594,7 +2784,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${escapeHtml(item.loc || '-')}</td>
       </tr>
       <tr>
-     
         <th>填單管理員／班別</th>
         <td colspan="3">${escapeHtml(item.reporterInfo || (item.source === 'QR_ADMIN' ? '管理室 QR 開單（未填姓名/班別）' : '物業系統開立'))}</td>
       </tr>
@@ -3030,6 +3219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('cfg-gemini-key').value = localStorage.getItem('pm_gemini_key') || '';
       document.getElementById('cfg-report-gas-url').value = localStorage.getItem('pm_report_gas_url') || DEFAULT_REPORT_GAS_URL;
       document.getElementById('cfg-report-key').value = localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY;
+      document.getElementById('cfg-qr-admin-list').value = localStorage.getItem('pm_qr_admin_list') || DEFAULT_QR_ADMIN_LIST.join(', ');
       document.getElementById('cfg-comm-name').value = appData.meta.communityName || '';
       document.getElementById('cfg-phone').value = appData.meta.phone || '';
       document.getElementById('cfg-taxid').value = appData.meta.taxId || '';
@@ -3043,6 +3233,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
       const reportGasUrl = document.getElementById('cfg-report-gas-url').value.trim();
       const reportKey = document.getElementById('cfg-report-key').value.trim();
+      const qrAdminList = document.getElementById('cfg-qr-admin-list').value.trim();
 
       if (clientId) {
         localStorage.setItem('pm_google_client_id', clientId);
@@ -3059,6 +3250,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (reportKey) {
         localStorage.setItem('pm_report_key', reportKey);
+      }
+      if (qrAdminList) {
+        localStorage.setItem('pm_qr_admin_list', qrAdminList);
+      } else {
+        localStorage.removeItem('pm_qr_admin_list');
       }
       appData.meta.communityName = document.getElementById('cfg-comm-name').value.trim();
       appData.meta.phone = document.getElementById('cfg-phone').value.trim();
