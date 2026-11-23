@@ -246,6 +246,7 @@
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2" id="module-cards-grid"></div>
       </div>
+
       <!-- 主工作區塊：工作日誌與排程 -->
       <div class="paper-card p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -463,7 +464,7 @@
         <iframe id="reg-preview-frame" class="w-full h-[600px] rounded-lg border border-slate-200" src=""></iframe>
       </div>
     </section>
-    <!-- ================= 4. 公告園地 ================= -->
+   <!-- ================= 4. 公告園地 ================= -->
     <section id="view-announcements" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -617,7 +618,7 @@
         </div>
       </div>
     </section>
-    <!-- ================= 7. 住戶清冊 ================= -->
+<!-- ================= 7. 住戶清冊 ================= -->
     <section id="view-residents" class="hidden space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="res-stats-bar"></div>
 
@@ -882,7 +883,7 @@
       </div>
     </div>
   </div>
- <script>
+<script>
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
@@ -1265,7 +1266,7 @@
       alert('✅ 已儲存至雲端！');
       await loadAdminRepairsList();
     }
-   // ================= 2. 初始化與導覽 =================
+  // ================= 2. 初始化與導覽 =================
     window.onload = () => {
       if (IS_QUICK_REPORT_MODE) {
         document.getElementById('main-header')?.classList.add('hidden');
@@ -1282,6 +1283,7 @@
         try { appData = { ...appData, ...JSON.parse(localCache) }; } catch (e) {}
       }
       if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
+      if (!Array.isArray(appData.events)) appData.events = [];
 
       const savedClientId = localStorage.getItem('pm_google_client_id');
       if (savedClientId) {
@@ -1437,6 +1439,8 @@
           if (fileRes.ok) {
             const cloudData = await fileRes.json();
             appData = { ...appData, ...cloudData };
+            if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
+            if (!Array.isArray(appData.events)) appData.events = [];
             migrateLegacyDailyLogs();
             if (appData.meta && appData.meta.geminiKey) localStorage.setItem('pm_gemini_key', appData.meta.geminiKey);
             if (appData.meta && appData.meta.clientId) localStorage.setItem('pm_google_client_id', appData.meta.clientId);
@@ -1473,6 +1477,7 @@
         console.warn("⚠️ 偵測到本機資料結構異常為空，為保護雲端歷史資料，已攔截此次同步！");
         return false;
       }
+      if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
       try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) {}
       renderAll();
       if (!accessToken || !driveFileId) {
@@ -1481,7 +1486,7 @@
       }
       updateSyncUI('syncing', '正在同步至 Google 雲端...');
       try {
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?uploadType=media`, {
+        const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -1693,12 +1698,26 @@
     }
 
     async function saveQuickLogItem() {
-      const date = document.getElementById('ql-date').value || new Date().toISOString().split('T')[0];
-      const type = document.getElementById('ql-type').value;
-      const color = document.getElementById('ql-color').value;
-      const content = document.getElementById('ql-content').value.trim();
-      const isStarEvent = document.getElementById('ql-star-event').checked;
-      if (!content) { alert('請輸入日誌或排程內容！'); return; }
+      const dateEl = document.getElementById('ql-date');
+      const typeEl = document.getElementById('ql-type');
+      const colorEl = document.getElementById('ql-color');
+      const contentEl = document.getElementById('ql-content');
+      const starEl = document.getElementById('ql-star-event');
+
+      const date = (dateEl?.value || '').trim() || new Date().toISOString().split('T')[0];
+      const type = typeEl?.value || '工作日誌';
+      const color = colorEl?.value || 'default';
+      const content = (contentEl?.value || '').trim();
+      const isStarEvent = !!starEl?.checked;
+
+      if (!content) {
+        alert('請輸入日誌或排程內容！');
+        contentEl?.focus();
+        return;
+      }
+
+      if (!Array.isArray(appData.workLogs)) appData.workLogs = [];
+      if (!Array.isArray(appData.events)) appData.events = [];
 
       const targetId = editingWorkLogId || Date.now();
       const payload = {
@@ -1708,7 +1727,7 @@
         color,
         content,
         isStarEvent,
-        photos: [...tempQuickPhotos]
+        photos: Array.isArray(tempQuickPhotos) ? [...tempQuickPhotos] : []
       };
 
       if (editingWorkLogId) {
@@ -1729,7 +1748,7 @@
           color,
           isStar: true,
           content,
-          photos: [...tempQuickPhotos]
+          photos: Array.isArray(tempQuickPhotos) ? [...tempQuickPhotos] : []
         };
         if (linkedEventIdx !== -1) appData.events[linkedEventIdx] = eventPayload;
         else appData.events.unshift(eventPayload);
@@ -1738,9 +1757,22 @@
       }
 
       closeQuickLogForm();
-      document.getElementById('ql-filter-date').value = date;
-      if (document.getElementById('dl-print-date')) document.getElementById('dl-print-date').value = date;
-      await syncToCloud();
+
+      const filterDateEl = document.getElementById('ql-filter-date');
+      if (filterDateEl) filterDateEl.value = date;
+      if (typeof quickColorFilter !== 'undefined' && quickColorFilter !== 'all') {
+        setQuickColorFilter('all');
+      }
+      const dlDateEl = document.getElementById('dl-print-date');
+      if (dlDateEl) dlDateEl.value = date;
+
+      try { localStorage.setItem('pm_local_data', JSON.stringify(appData)); } catch (e) {}
+      renderDashboardWorkLogs();
+
+      const synced = await syncToCloud();
+      if (!synced) {
+        alert('✅ 已存至本機畫面，但雲端同步尚未完成；若未連結雲端請點右上角「連結雲端」後再按一次儲存。');
+      }
     }
 
     function deleteWorkLogAndSync(id) {
@@ -2832,7 +2864,8 @@
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
-async function exportRepairImage(id) {
+
+    async function exportRepairImage(id) {
       const item = appData.repairs.find(r => r.id === id);
       if (!item) return;
 
@@ -2943,6 +2976,7 @@ async function exportRepairImage(id) {
         tempBox.remove();
       }
     }
+
     function addRenovation() {
       const unit = document.getElementById('ren-unit').value.trim();
       const period = document.getElementById('ren-period').value.trim();
@@ -3235,17 +3269,19 @@ async function exportRepairImage(id) {
               ` : ''}
             </div>
 
-            <!-- 匯出 HTML 列印檔 -->
+            <!-- 匯出 HTML 列印檔與結案圖片 -->
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
               <span class="text-xs ${isAccepted ? 'text-emerald-700 font-medium' : 'text-slate-500'}">
-                ${isAccepted ? '已完成驗收結案，可匯出完整反應報修單據列印' : '可隨時匯出目前進度或於「已驗收結案」後匯出反應報修單列印'}
+                ${isAccepted ? '已完成驗收結案，可匯出完整反應報修單據列印或轉存圖片' : '可隨時匯出目前進度或於「已驗收結案」後匯出反應報修單列印'}
               </span>
-      <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出反應報修 HTML 檔
-              </button>
-              <button type="button" onclick="exportRepairImage(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
-                <i data-lucide="image-down" class="w-3.5 h-3.5"></i> 匯出結案圖片
-              </button>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出反應報修 HTML 檔
+                </button>
+                <button type="button" onclick="exportRepairImage(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+                  <i data-lucide="image-down" class="w-3.5 h-3.5"></i> 匯出結案圖片
+                </button>
+              </div>
             </div>
           </div>
         `;
