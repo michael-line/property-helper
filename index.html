@@ -914,7 +914,39 @@
     function getReportGasUrl() {
       return (localStorage.getItem('pm_report_gas_url') || DEFAULT_REPORT_GAS_URL).trim();
     }
+const DEFAULT_QR_ADMIN_LIST = ['王平', '余玲玲', '邱正哲', '主任'];
 
+function getQrAdminList() {
+  const raw = localStorage.getItem('pm_qr_admin_list');
+  if (!raw || !raw.trim()) return DEFAULT_QR_ADMIN_LIST;
+  const list = raw
+    .split(/[,，\n]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : DEFAULT_QR_ADMIN_LIST;
+}
+
+function selectQuickAdmin(name) {
+  const input = document.getElementById('qr-rep-admin');
+  if (input) input.value = name;
+  renderQrAdminQuickButtons();
+}
+
+function renderQrAdminQuickButtons() {
+  const container = document.getElementById('qr-admin-quick-buttons');
+  if (!container) return;
+  const currentVal = (document.getElementById('qr-rep-admin')?.value || '').trim();
+  const list = getQrAdminList();
+
+  container.innerHTML = list.map(name => {
+    const active = currentVal === name;
+    const cls = active
+      ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow-2xs'
+      : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-emerald-50 hover:border-emerald-300';
+    const safeJsName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return `<button type="button" onclick="selectQuickAdmin('${safeJsName}')" class="px-2.5 py-1 rounded-lg border text-xs transition ${cls}">${name}</button>`;
+  }).join('');
+}
     function getReportSecretKey() {
       return (URL_REPORT_KEY || localStorage.getItem('pm_report_key') || DEFAULT_REPORT_KEY).trim();
     }
