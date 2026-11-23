@@ -69,60 +69,87 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- 管理員精簡填單模式專用畫面（掃描 QR Code 進入時僅顯示此區，不載入任何既有資料） -->
-  <div id="quick-report-portal" class="hidden min-h-screen bg-slate-50 py-6 px-4 flex items-center justify-center">
-    <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-md space-y-4">
-      <div class="border-b border-slate-100 pb-3">
-        <div class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 mb-2">
-          <span>📋 管理室開單專用通道</span>
+<!-- 管理員精簡填單模式專用畫面 -->
+  <div id="quick-report-portal" class="hidden min-h-screen bg-slate-50 py-6 px-4">
+    <div class="max-w-3xl mx-auto space-y-5">
+      <!-- 1. 開立反應報修單 -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md space-y-4">
+        <div class="border-b border-slate-100 pb-3">
+          <div class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 mb-2">
+            <span>📋 管理室開單與處理通道</span>
+          </div>
+          <h1 class="text-xl font-bold text-slate-800">開立反應報修單</h1>
+          <p class="text-xs text-slate-500 mt-1">請填寫現場反應或報修資訊；您也可查詢尚未派工或驗收的案件並填寫派工／驗收紀錄（結案由主任核准）。</p>
         </div>
-        <h1 class="text-xl font-bold text-slate-800">開立反應報修單</h1>
-        <p class="text-xs text-slate-500 mt-1">請填寫現場反應或報修資訊，送出後將直接建檔交由社區主任接續派工與處理。</p>
+
+        <div class="space-y-3 text-sm">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">填單管理員／班別（可直接點選或手動輸入）</label>
+            <div id="qr-admin-quick-buttons" class="flex flex-wrap gap-1.5 mb-2"></div>
+            <input type="text" id="qr-rep-admin" placeholder="點選上方名單，或直接輸入管理員姓名／班別" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修類別 <span class="text-rose-500">*</span></label>
+            <select id="qr-rep-cat" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="水電管線">💧 水電管線</option>
+              <option value="電梯設施">🛗 電梯設施</option>
+              <option value="照明電力">⚡ 照明電力</option>
+              <option value="弱電門禁">🔔 弱電門禁</option>
+              <option value="壁癌滲漏">🏚️ 壁癌滲漏</option>
+              <option value="環境衛生">🧹 環境衛生</option>
+              <option value="違規安全">🚨 違規安全</option>
+              <option value="安寧秩序(噪音/菸害)">🔇 安寧秩序(噪音/菸害)</option>
+              <option value="其他反應">💬 其他反應</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修地點或戶別 <span class="text-rose-500">*</span></label>
+            <input type="text" id="qr-rep-loc" placeholder="例如：J棟14樓、B1車道、大廳梯廳..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">反應內容或故障狀況描述 <span class="text-rose-500">*</span></label>
+            <textarea id="qr-rep-desc" rows="3" placeholder="請簡述現場狀況、時間或住戶反應重點..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">現場照片（選填，建議拍攝現況）</label>
+            <input type="file" id="qr-rep-photo" accept="image/*" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs bg-slate-50">
+          </div>
+        </div>
+
+        <div id="qr-rep-feedback" class="hidden text-xs rounded-xl p-3"></div>
+
+        <button type="button" id="qr-rep-submit-btn" onclick="submitQuickReport()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2.5 rounded-xl shadow-xs transition">
+          送出反應報修單
+        </button>
       </div>
 
-      <div class="space-y-3 text-sm">
-        <div>
-  <label class="block text-xs font-bold text-slate-600 mb-1">填單管理員／班別（可直接點選或手動輸入）</label>
-  <div id="qr-admin-quick-buttons" class="flex flex-wrap gap-1.5 mb-2"></div>
-  <input type="text" id="qr-rep-admin" placeholder="點選上方名單，或直接輸入管理員姓名／班別" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
-</div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修類別 <span class="text-rose-500">*</span></label>
-          <select id="qr-rep-cat" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
-            <option value="水電管線">💧 水電管線</option>
-            <option value="電梯設施">🛗 電梯設施</option>
-            <option value="照明電力">⚡ 照明電力</option>
-            <option value="弱電門禁">🔔 弱電門禁</option>
-            <option value="壁癌滲漏">🏚️ 壁癌滲漏</option>
-            <option value="環境衛生">🧹 環境衛生</option>
-            <option value="違規安全">🚨 違規安全</option>
-            <option value="安寧秩序(噪音/菸害)">🔇 安寧秩序(噪音/菸害)</option>
-            <option value="其他反應">💬 其他反應</option>
-          </select>
+      <!-- 2. 管理員查詢尚未派工／驗收案件與填寫派工、驗收 -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">查詢待處理案件（派工／驗收）</h2>
+            <p class="text-xs text-slate-500 mt-0.5">可查詢尚未派工或尚未驗收的反映事項並填寫派工／驗收紀錄；「已驗收結案」由主任確認。</p>
+          </div>
+          <button type="button" onclick="loadAdminRepairsList()" id="qr-refresh-btn" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-lg">
+            ↻ 重新整理清單
+          </button>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">反應／報修地點或戶別 <span class="text-rose-500">*</span></label>
-          <input type="text" id="qr-rep-loc" placeholder="例如：J棟14樓、B1車道、大廳梯廳..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <button type="button" onclick="setAdminRepairFilter('pending_dispatch')" id="qr-flt-pending_dispatch" class="px-3 py-1.5 rounded-full font-bold bg-amber-600 text-white">尚未派工</button>
+          <button type="button" onclick="setAdminRepairFilter('pending_accept')" id="qr-flt-pending_accept" class="px-3 py-1.5 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">尚未驗收</button>
+          <button type="button" onclick="setAdminRepairFilter('open_all')" id="qr-flt-open_all" class="px-3 py-1.5 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">全部未結案</button>
+          <button type="button" onclick="setAdminRepairFilter('all')" id="qr-flt-all" class="px-3 py-1.5 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">全部工單</button>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">反應內容或故障狀況描述 <span class="text-rose-500">*</span></label>
-          <textarea id="qr-rep-desc" rows="4" placeholder="請簡述現場狀況、時間或住戶反應重點..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">現場照片（選填，建議拍攝現況）</label>
-          <input type="file" id="qr-rep-photo" accept="image/*" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs bg-slate-50">
+        <div id="qr-repairs-list" class="space-y-3 text-sm text-slate-500">
+          尚未載入清單，請點選「重新整理清單」或送出新單後自動更新。
         </div>
       </div>
-
-      <div id="qr-rep-feedback" class="hidden text-xs rounded-xl p-3"></div>
-
-      <button type="button" id="qr-rep-submit-btn" onclick="submitQuickReport()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2.5 rounded-xl shadow-xs transition">
-        送出反應報修單
-      </button>
     </div>
   </div>
 
