@@ -2832,7 +2832,117 @@
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
+async function exportRepairImage(id) {
+      const item = appData.repairs.find(r => r.id === id);
+      if (!item) return;
 
+      const escapeHtml = (str = '') =>
+        String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+
+      const commName = appData.meta?.communityName || '小A 社區物業管理';
+      const renderPhotoBlock = (title, src) => src
+        ? `<div style="margin-top:10px;">
+             <div style="font-weight:bold;margin-bottom:4px;font-size:12px;color:#334155;">${escapeHtml(title)}</div>
+             <img src="${src}" alt="${escapeHtml(title)}" style="max-width:260px;max-height:180px;height:auto;border:1px solid #cbd5e1;border-radius:6px;display:block;" />
+           </div>`
+        : '';
+
+      const photosHtml = [
+        renderPhotoBlock('現場反應／報修照片', item.photo),
+        renderPhotoBlock('派工／施工照片', item.dispatchPhoto),
+        renderPhotoBlock('驗收／完工照片', item.acceptPhoto)
+      ].filter(Boolean).join('');
+
+      const tempBox = document.createElement('div');
+      tempBox.style.position = 'fixed';
+      tempBox.style.left = '-9999px';
+      tempBox.style.top = '0';
+      tempBox.style.width = '780px';
+      tempBox.style.background = '#ffffff';
+      tempBox.style.padding = '24px 28px';
+      tempBox.style.fontFamily = '"Noto Sans TC", "Microsoft JhengHei", sans-serif';
+      tempBox.style.color = '#1e293b';
+
+      tempBox.innerHTML = `
+        <div style="border:1.5px solid #334155;padding:22px 26px;border-radius:8px;background:#ffffff;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:16px;">
+            <h1 style="margin:0;font-size:20px;font-weight:700;">${escapeHtml(commName)} — 反應報修處理與驗收單</h1>
+            <span style="border:1px solid #0f172a;padding:2px 10px;font-size:12px;font-weight:700;">狀態：${escapeHtml(item.status || '待物業處理')}</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.6;">
+            <tr>
+              <th style="width:140px;background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">工單編號</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(String(item.id || '-'))}</td>
+              <th style="width:140px;background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">開立日期時間</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(`${item.date || '-'}${item.time ? ` ${item.time}` : ''}`)}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">反應／報修類別</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.cat || '-')}</td>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">反應／報修地點或戶別</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.loc || '-')}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">填單管理員／班別</th>
+              <td colspan="3" style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.reporterInfo || (item.source === 'QR_ADMIN' ? '管理室 QR 開單（未填姓名/班別）' : '物業系統開立'))}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">反應內容／故障狀況描述</th>
+              <td colspan="3" style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.desc || '-')}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">派工日期</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.dispatchDate || '-')}</td>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">派工廠商／人員</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.dispatchVendor || '-')}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">派工說明</th>
+              <td colspan="3" style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.dispatchNote || '-')}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">驗收日期</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.acceptDate || '-')}</td>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">驗收人員</th>
+              <td style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.acceptBy || '-')}</td>
+            </tr>
+            <tr>
+              <th style="background:#f1f5f9;border:1px solid #94a3b8;padding:7px 10px;text-align:left;">處理結果與驗收備註</th>
+              <td colspan="3" style="border:1px solid #94a3b8;padding:7px 10px;">${escapeHtml(item.acceptNote || '-')}</td>
+            </tr>
+          </table>
+          ${photosHtml ? `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;">${photosHtml}</div>` : ''}
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px;font-size:13px;">
+            <div style="border-top:1px solid #475569;padding-top:6px;">反應／報修人簽章：</div>
+            <div style="border-top:1px solid #475569;padding-top:6px;">承攬廠商簽章：</div>
+            <div style="border-top:1px solid #475569;padding-top:6px;">物業／主委核章：</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(tempBox);
+      try {
+        const canvas = await html2canvas(tempBox, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true
+        });
+        const imgUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.download = `反應報修結案單_${item.id}_${item.date || '紀錄'}.jpg`;
+        link.href = imgUrl;
+        link.click();
+      } catch (err) {
+        console.error(err);
+        alert('匯出結案圖片失敗，請稍後再試');
+      } finally {
+        tempBox.remove();
+      }
+    }
     function addRenovation() {
       const unit = document.getElementById('ren-unit').value.trim();
       const period = document.getElementById('ren-period').value.trim();
@@ -3130,8 +3240,11 @@
               <span class="text-xs ${isAccepted ? 'text-emerald-700 font-medium' : 'text-slate-500'}">
                 ${isAccepted ? '已完成驗收結案，可匯出完整反應報修單據列印' : '可隨時匯出目前進度或於「已驗收結案」後匯出反應報修單列印'}
               </span>
-              <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
+      <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出反應報修 HTML 檔
+              </button>
+              <button type="button" onclick="exportRepairImage(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+                <i data-lucide="image-down" class="w-3.5 h-3.5"></i> 匯出結案圖片
               </button>
             </div>
           </div>
