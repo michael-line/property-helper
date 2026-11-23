@@ -293,6 +293,7 @@
         </button>
       </div>
     </section>
+
     <!-- ================= 2. 大事紀要 ================= -->
     <section id="view-events" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
@@ -379,7 +380,8 @@
         <iframe id="reg-preview-frame" class="w-full h-[600px] rounded-lg border border-slate-200" src=""></iframe>
       </div>
     </section>
-    <!-- ================= 4. 公告園地（上傳公告圖檔 + AI 自動辨識分析內容並記錄） ================= -->
+
+    <!-- ================= 4. 公告園地 ================= -->
     <section id="view-announcements" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -390,7 +392,6 @@
           </div>
         </div>
 
-        <!-- 上傳公告圖檔表單 -->
         <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
@@ -407,7 +408,7 @@
             </div>
           </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
             <span class="text-xs text-slate-500">✨ 可選擇直接建檔保存，或交由 AI 總幹事自動判讀公告圖片重點</span>
             <div class="flex flex-wrap items-center gap-2 ml-auto">
               <button type="button" onclick="saveAnnouncementDirect()" id="ann-direct-save-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
@@ -418,13 +419,12 @@
               </button>
             </div>
           </div>
+        </div>
 
-        <!-- 搜尋公告園地 -->
         <div>
           <input type="text" id="ann-search" oninput="renderAnnouncementsList()" placeholder="搜尋公告標題、日期或 AI 解析內容..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
         </div>
 
-        <!-- 已歸檔公告卡片清單 -->
         <div id="announcements-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
     </section>
@@ -583,6 +583,7 @@
         </div>
       </div>
     </section>
+
     <!-- ================= 8. 房屋出售/出租帶看門禁管制 ================= -->
     <section id="view-housing" class="hidden space-y-4">
       <div class="paper-card p-5">
@@ -611,11 +612,11 @@
       </div>
     </section>
 
-    <!-- ================= 9. 報修管制 ================= -->
+    <!-- ================= 9. 反應報修 ================= -->
     <section id="view-repairs" class="hidden space-y-4">
       <div class="paper-card p-5">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-800">社區報修工單全生命週期追蹤</h2>
+          <h2 class="text-lg font-bold text-slate-800">反應報修工單全生命週期追蹤</h2>
           <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700" id="repairs-total-badge">處理中 0 件 / 累計 0 單</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-4">
@@ -625,11 +626,15 @@
             <option value="照明電力">⚡ 照明電力</option>
             <option value="弱電門禁">🔔 弱電門禁</option>
             <option value="壁癌滲漏">🏚️ 壁癌滲漏</option>
+            <option value="環境衛生">🧹 環境衛生</option>
+            <option value="違規安全">🚨 違規安全</option>
+            <option value="安寧秩序(噪音/菸害)">🔇 安寧秩序(噪音/菸害)</option>
+            <option value="其他反應">💬 其他反應</option>
           </select>
-          <input type="text" id="rep-loc" placeholder="報修地點/戶別" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-          <input type="text" id="rep-desc" placeholder="故障狀況描述..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <input type="text" id="rep-loc" placeholder="反應／報修地點或戶別" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <input type="text" id="rep-desc" placeholder="反應內容或故障狀況描述..." class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
           <input type="file" id="rep-photo" accept="image/*" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-slate-50">
-          <button onclick="addRepair()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium">開立報修單</button>
+          <button onclick="addRepair()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium">開立反應報修單</button>
         </div>
         <div id="repairs-list" class="space-y-3"></div>
       </div>
@@ -665,7 +670,7 @@
         <div id="vendors-list" class="space-y-2"></div>
       </div>
     </section>
-    </main>
+  </main>
 
   <!-- 設定 Modal -->
   <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
@@ -719,7 +724,7 @@
         <button onclick="document.getElementById('ai-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div id="ai-chat-box" class="flex-1 overflow-y-auto space-y-3 text-sm bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3 min-h-[220px]">
-        <p class="text-xs text-slate-500">您好！我是您的社區 AI 總幹事。您可以請我幫您擬定社區公告、查詢目前報修/住戶統計，或諮詢《公寓大廈管理條例》實務問題。</p>
+        <p class="text-xs text-slate-500">您好！我是您的社區 AI 總幹事。您可以請我幫您擬定社區公告、查詢目前反應報修/住戶統計，或諮詢《公寓大廈管理條例》實務問題。</p>
       </div>
       <div class="flex gap-2">
         <input type="text" id="ai-prompt-input" onkeypress="if(event.key==='Enter') askGeminiAssistant()" placeholder="輸入問題（如：幫我擬一份洗水塔停水公告）..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm">
@@ -1743,7 +1748,8 @@
       }
       return { ok: false, text: `⚠️ AI 解析未完成（原因：${lastErrorMsg || '請檢查設定中的 Gemini API Key 是否正確'}），但公告圖檔已成功建檔！` };
     }
-async function saveAnnouncementDirect() {
+
+    async function saveAnnouncementDirect() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
       const file = document.getElementById('ann-image-file').files[0];
@@ -1782,6 +1788,7 @@ async function saveAnnouncementDirect() {
         lucide.createIcons();
       }
     }
+
     async function uploadAndAnalyzeAnnouncement() {
       const date = document.getElementById('ann-date').value || new Date().toISOString().split('T')[0];
       const title = document.getElementById('ann-title').value.trim();
@@ -1874,7 +1881,8 @@ async function saveAnnouncementDirect() {
       `).join('') || '<p class="text-xs text-slate-400 col-span-2 text-center py-8">尚無公告圖檔紀錄，請由上方選擇圖檔並點選 AI 分析記錄</p>';
       lucide.createIcons();
     }
-   // ================= 7. 社區規範、函文圖資、住戶、售屋、報修、裝潢廠商 =================
+
+    // ================= 7. 社區規範、函文圖資、住戶、售屋、反應報修、裝潢廠商 =================
     async function uploadRegulation() {
       const title = document.getElementById('reg-title').value.trim();
       const note = document.getElementById('reg-note').value.trim();
@@ -2164,7 +2172,7 @@ async function saveAnnouncementDirect() {
         : '';
 
       const photosHtml = [
-        renderPhotoBlock('現場報修照片', item.photo),
+        renderPhotoBlock('現場反應／報修照片', item.photo),
         renderPhotoBlock('派工／施工照片', item.dispatchPhoto),
         renderPhotoBlock('驗收／完工照片', item.acceptPhoto)
       ].filter(Boolean).join('');
@@ -2173,7 +2181,7 @@ async function saveAnnouncementDirect() {
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>報修結案單 - ${escapeHtml(String(item.id))}</title>
+  <title>反應報修結案單 - ${escapeHtml(String(item.id))}</title>
   <style>
     @page { size: A4 portrait; margin: 15mm; }
     body {
@@ -2260,7 +2268,7 @@ async function saveAnnouncementDirect() {
   </div>
   <div class="sheet">
     <div class="top-bar">
-      <h1>${escapeHtml(commName)} — 報修處理與驗收單</h1>
+      <h1>${escapeHtml(commName)} — 反應報修處理與驗收單</h1>
       <span class="status-tag">狀態：${escapeHtml(item.status || '待物業處理')}</span>
     </div>
     <table>
@@ -2271,13 +2279,13 @@ async function saveAnnouncementDirect() {
         <td>${escapeHtml(item.date || '-')}</td>
       </tr>
       <tr>
-        <th>報修類別</th>
+        <th>反應／報修類別</th>
         <td>${escapeHtml(item.cat || '-')}</td>
-        <th>報修地點／戶別</th>
+        <th>反應／報修地點或戶別</th>
         <td>${escapeHtml(item.loc || '-')}</td>
       </tr>
       <tr>
-        <th>故障狀況描述</th>
+        <th>反應內容／故障狀況描述</th>
         <td colspan="3">${escapeHtml(item.desc || '-')}</td>
       </tr>
       <tr>
@@ -2297,13 +2305,13 @@ async function saveAnnouncementDirect() {
         <td>${escapeHtml(item.acceptBy || '-')}</td>
       </tr>
       <tr>
-        <th>處理結果與備註</th>
+        <th>處理結果與驗收備註</th>
         <td colspan="3">${escapeHtml(item.acceptNote || '-')}</td>
       </tr>
     </table>
     ${photosHtml ? `<div class="photo-grid">${photosHtml}</div>` : ''}
     <div class="sign-row">
-      <div class="sign-line">報修人／住戶簽章：</div>
+      <div class="sign-line">反應／報修人簽章：</div>
       <div class="sign-line">承攬廠商簽章：</div>
       <div class="sign-line">物業／主委核章：</div>
     </div>
@@ -2315,7 +2323,7 @@ async function saveAnnouncementDirect() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `報修單_${item.id}_${item.date || '紀錄'}.html`;
+      link.download = `反應報修單_${item.id}_${item.date || '紀錄'}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2405,7 +2413,7 @@ async function saveAnnouncementDirect() {
 
       const defaultCards = [
         { id: 'dailylog', title: '日誌列印', icon: 'printer', tileBg: 'bg-cyan-50 border-cyan-200 hover:bg-cyan-100/70', iconBg: 'bg-cyan-600 text-white' },
-        { id: 'repairs', title: '報修管制', icon: 'wrench', tileBg: 'bg-amber-50 border-amber-200 hover:bg-amber-100/70', iconBg: 'bg-amber-500 text-white' },
+        { id: 'repairs', title: '反應報修', icon: 'wrench', tileBg: 'bg-amber-50 border-amber-200 hover:bg-amber-100/70', iconBg: 'bg-amber-500 text-white' },
         { id: 'events', title: '大事紀要', icon: 'star', tileBg: 'bg-blue-50 border-blue-200 hover:bg-blue-100/70', iconBg: 'bg-blue-600 text-white' },
         { id: 'residents', title: '住戶清冊', icon: 'users', tileBg: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70', iconBg: 'bg-emerald-600 text-white' },
         { id: 'announcements', title: '公告園地', icon: 'megaphone', tileBg: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100/70', iconBg: 'bg-indigo-600 text-white' },
@@ -2585,15 +2593,15 @@ async function saveAnnouncementDirect() {
             <!-- 匯出 HTML 列印檔 -->
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
               <span class="text-xs ${isAccepted ? 'text-emerald-700 font-medium' : 'text-slate-500'}">
-                ${isAccepted ? '已完成驗收結案，可匯出完整 HTML 單據列印' : '可隨時匯出目前進度或於「已驗收結案」後匯出列印'}
+                ${isAccepted ? '已完成驗收結案，可匯出完整反應報修單據列印' : '可隨時匯出目前進度或於「已驗收結案」後匯出反應報修單列印'}
               </span>
               <button type="button" onclick="exportRepairHtml(${r.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1 ${isAccepted ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs' : 'bg-slate-700 hover:bg-slate-800 text-white'}">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出列印 HTML 檔
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> 匯出反應報修 HTML 檔
               </button>
             </div>
           </div>
         `;
-      }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無報修工單</p>';
+      }).join('') || '<p class="text-xs text-slate-400 text-center py-4">尚無反應報修工單</p>';
 
       document.getElementById('renovations-list').innerHTML = appData.renovations.map(r => `
         <div class="p-3 border border-slate-200 rounded-lg flex justify-between text-sm">
@@ -2640,7 +2648,7 @@ async function saveAnnouncementDirect() {
         sendBtn.innerText = '處理中...';
       }
 
-      const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理報修 ${appData.repairs.filter(r => r.status !== '已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
+      const contextSummary = `社區名稱：${appData.meta.communityName || '未設定'}，目前建檔住戶 ${appData.residents.length} 戶，待處理反應報修 ${appData.repairs.filter(r => r.status !== '已驗收結案').length} 件，施工中 ${appData.renovations.length} 戶。`;
 
       try {
         const result = await callGeminiWithFallback(apiKey, [
@@ -2740,4 +2748,4 @@ async function saveAnnouncementDirect() {
     }
   </script>
 </body>
-</html> 
+</html>
