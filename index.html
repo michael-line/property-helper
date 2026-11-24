@@ -16,11 +16,84 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+    :root {
+      --xiaoa-base-size: 16px;
+      --xiaoa-font-scale: 1;
+    }
+
+    @media (max-width: 768px) {
+      :root {
+        --xiaoa-base-size: 17px;
+      }
+    }
+
+    html[data-xiaoa-font-level="1"] {
+      --xiaoa-font-scale: 1;
+      font-size: calc(var(--xiaoa-base-size) * 1);
+    }
+
+    html[data-xiaoa-font-level="2"] {
+      --xiaoa-font-scale: 1.38;
+      font-size: calc(var(--xiaoa-base-size) * 1.38);
+    }
+
+    html[data-xiaoa-font-level="3"] {
+      --xiaoa-font-scale: 1.72;
+      font-size: calc(var(--xiaoa-base-size) * 1.72);
+    }
+
     body {
       font-family: 'Noto Sans TC', sans-serif;
       background-color: #f8fafc;
       color: #1e293b;
+      font-size: 1rem;
+      line-height: 1.5;
     }
+
+    /* 切換為 A+ 或 A++ 時，讓全頁與管理員報修外掛內大部分文字同步放大 */
+    html[data-xiaoa-font-level="2"] body,
+    html[data-xiaoa-font-level="3"] body,
+    html[data-xiaoa-font-level="2"] #quick-report-portal,
+    html[data-xiaoa-font-level="3"] #quick-report-portal {
+      font-size: 1rem;
+      line-height: 1.52;
+    }
+
+    html[data-xiaoa-font-level="2"] :is(p, span, div, label, button, input, select, textarea, li, td, th, h1, h2, h3, h4, strong, a):not(.xiaoa-font-btn),
+    html[data-xiaoa-font-level="3"] :is(p, span, div, label, button, input, select, textarea, li, td, th, h1, h2, h3, h4, strong, a):not(.xiaoa-font-btn) {
+      font-size: max(1em, 1rem);
+      line-height: 1.52;
+    }
+
+    .xiaoa-font-switcher {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      gap: 2px;
+    }
+
+    .xiaoa-font-btn {
+      border: none;
+      background: transparent;
+      color: #334155;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      cursor: pointer;
+      line-height: 1.25;
+      font-size: 12px !important;
+      transition: all 0.15s ease;
+    }
+
+    .xiaoa-font-btn.is-active {
+      background: #059669;
+      color: #ffffff;
+    }
+
     .paper-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -74,12 +147,19 @@
     <div class="max-w-3xl mx-auto space-y-5">
       <!-- 1. 開立反應報修單 -->
       <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md space-y-4">
-        <div class="border-b border-slate-100 pb-3">
-          <div class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 mb-2">
-            <span>📋 管理室開單與處理通道</span>
+        <div class="border-b border-slate-100 pb-3 flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 mb-2">
+              <span>📋 管理室開單與處理通道</span>
+            </div>
+            <h1 class="text-xl font-bold text-slate-800">開立反應報修單</h1>
+            <p class="text-xs text-slate-500 mt-1">請填寫現場反應或報修資訊；您也可查詢尚未派工或驗收的案件並填寫派工／驗收紀錄（結案由主任核准）。</p>
           </div>
-          <h1 class="text-xl font-bold text-slate-800">開立反應報修單</h1>
-          <p class="text-xs text-slate-500 mt-1">請填寫現場反應或報修資訊；您也可查詢尚未派工或驗收的案件並填寫派工／驗收紀錄（結案由主任核准）。</p>
+          <div class="xiaoa-font-switcher no-print" role="group" aria-label="字體大小切換">
+            <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="1" onclick="setXiaoaFontLevel('1')" title="標準字體">A</button>
+            <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="2" onclick="setXiaoaFontLevel('2')" title="放大2級">A+</button>
+            <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="3" onclick="setXiaoaFontLevel('3')" title="放大3級">A++</button>
+          </div>
         </div>
 
         <div class="space-y-3 text-sm">
@@ -126,8 +206,7 @@
           送出反應報修單
         </button>
       </div>
-
-      <!-- 2. 管理員查詢尚未派工／驗收案件與填寫派工、驗收 -->
+   <!-- 2. 管理員查詢尚未派工／驗收案件與填寫派工、驗收 -->
       <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
@@ -166,6 +245,12 @@
       </div>
 
       <div class="flex items-center gap-1 sm:gap-2">
+        <div class="xiaoa-font-switcher" role="group" aria-label="全頁字體大小切換">
+          <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="1" onclick="setXiaoaFontLevel('1')" title="標準字體">A</button>
+          <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="2" onclick="setXiaoaFontLevel('2')" title="放大2級">A+</button>
+          <button type="button" class="xiaoa-font-btn" data-xiaoa-font-btn="3" onclick="setXiaoaFontLevel('3')" title="放大3級">A++</button>
+        </div>
+
         <span id="sync-badge" class="hidden items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
           <span class="w-2 h-2 rounded-full bg-slate-400" id="sync-dot"></span>
           <span id="sync-label" class="hidden md:inline">離線</span>
@@ -215,8 +300,7 @@
         立即設定
       </button>
     </div>
-
-    <!-- 返回總覽導覽列 -->
+  <!-- 返回總覽導覽列 -->
     <div id="subpage-nav" class="hidden mb-4 flex items-center justify-between no-print">
       <button onclick="switchTab('dashboard')" class="text-sm text-slate-600 hover:text-emerald-600 flex items-center gap-1.5 font-medium">
         <i data-lucide="arrow-left" class="w-4 h-4"></i> 返回小A總覽
@@ -464,7 +548,8 @@
         <iframe id="reg-preview-frame" class="w-full h-[600px] rounded-lg border border-slate-200" src=""></iframe>
       </div>
     </section>
-   <!-- ================= 4. 公告園地 ================= -->
+
+    <!-- ================= 4. 公告園地 ================= -->
     <section id="view-announcements" class="hidden space-y-4">
       <div class="paper-card p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -511,7 +596,6 @@
         <div id="announcements-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
     </section>
-
     <!-- ================= 5. 函文圖資 ================= -->
     <section id="view-legal" class="hidden space-y-4">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -618,7 +702,8 @@
         </div>
       </div>
     </section>
-<!-- ================= 7. 住戶清冊 ================= -->
+
+    <!-- ================= 7. 住戶清冊 ================= -->
     <section id="view-residents" class="hidden space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="res-stats-bar"></div>
 
@@ -665,8 +750,7 @@
         </div>
       </div>
     </section>
-
-    <!-- ================= 8. 房屋出售/出租帶看門禁管制 ================= -->
+   <!-- ================= 8. 房屋出售/出租帶看門禁管制 ================= -->
     <section id="view-housing" class="hidden space-y-4">
       <div class="paper-card p-5">
         <div class="flex items-center justify-between mb-1">
@@ -884,6 +968,34 @@
     </div>
   </div>
 <script>
+    // ================= 0. 全頁字體三段式放大控制（A / A+ / A++，各再加一級） =================
+    const XIAOA_FONT_STORAGE_KEY = 'pm_page_font_level';
+
+    function syncXiaoaFontButtons(level) {
+      document.querySelectorAll('[data-xiaoa-font-btn]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.getAttribute('data-xiaoa-font-btn') === level);
+      });
+    }
+
+    function setXiaoaFontLevel(level) {
+      const normalized = ['1', '2', '3'].includes(String(level)) ? String(level) : '1';
+      document.documentElement.setAttribute('data-xiaoa-font-level', normalized);
+      try {
+        localStorage.setItem(XIAOA_FONT_STORAGE_KEY, normalized);
+      } catch (e) {}
+      syncXiaoaFontButtons(normalized);
+    }
+
+    function initXiaoaFontLevel() {
+      let saved = '1';
+      try {
+        saved = localStorage.getItem(XIAOA_FONT_STORAGE_KEY) || '1';
+      } catch (e) {}
+      setXiaoaFontLevel(saved);
+    }
+
+    initXiaoaFontLevel();
+
     // ================= 1. 系統核心資料狀態 =================
     const DATA_FILENAME = 'PropertyManager_Private_Data.json';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
@@ -1268,6 +1380,8 @@
     }
   // ================= 2. 初始化與導覽 =================
     window.onload = () => {
+      initXiaoaFontLevel();
+
       if (IS_QUICK_REPORT_MODE) {
         document.getElementById('main-header')?.classList.add('hidden');
         document.getElementById('main-content')?.classList.add('hidden');
@@ -1562,8 +1676,7 @@
         reader.readAsDataURL(file);
       });
     }
-
-    // ================= 4. 首頁主區塊：工作日誌與排程 =================
+  // ================= 4. 首頁主區塊：工作日誌與排程 =================
     function openNewQuickLogForm() {
       editingWorkLogId = null;
       document.getElementById('ql-form-title').innerText = '➕ 新增工作日誌／排程';
@@ -2411,8 +2524,7 @@
       `).join('') || '<p class="text-xs text-slate-400 col-span-2 text-center py-8">尚無公告圖檔紀錄，請由上方選擇圖檔並點選 AI 分析記錄</p>';
       lucide.createIcons();
     }
-
-    // ================= 7. 社區規範、函文圖資、住戶、售屋、反應報修、裝潢廠商 =================
+  // ================= 7. 社區規範、函文圖資、住戶、售屋、反應報修、裝潢廠商 =================
     async function uploadRegulation() {
       const title = document.getElementById('reg-title').value.trim();
       const note = document.getElementById('reg-note').value.trim();
@@ -3002,8 +3114,7 @@
       appData[collection] = appData[collection].filter(item => item.id !== id);
       syncToCloud();
     }
-
-    // ================= 8. 全畫面渲染引擎 =================
+  // ================= 8. 全畫面渲染引擎 =================
     function renderResidentsTable() {
       const q = (document.getElementById('res-search')?.value || '').toLowerCase();
       const list = appData.residents.filter(r => !q || r.unit.toLowerCase().includes(q) || r.name.toLowerCase().includes(q) || r.phone.includes(q) || (r.plate || '').toLowerCase().includes(q));
